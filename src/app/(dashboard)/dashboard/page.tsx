@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
-import { formatCurrency } from '@/lib/currency'
 import {
   MessageSquare,
   UserPlus,
-  DollarSign,
   Send,
 } from 'lucide-react'
 
@@ -28,6 +26,7 @@ import type {
 
 import { MetricCard } from '@/components/dashboard/metric-card'
 import { SkeletonCard } from '@/components/dashboard/skeleton'
+import { AgendaMetrics } from '@/components/dashboard/agenda-metrics'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
 import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
@@ -164,12 +163,6 @@ export default function DashboardPage() {
               }}
             />
             <MetricCard
-              title={t('openDealsValue')}
-              value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
-              icon={DollarSign}
-              subtitle={t('openDeals', { count: metrics.openDealsCount })}
-            />
-            <MetricCard
               title={t('messagesSentToday')}
               value={metrics.messagesSentToday.current.toLocaleString()}
               icon={Send}
@@ -186,6 +179,9 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {/* Agenda / Services metrics (replaces the open-deals card) */}
+      <AgendaMetrics />
 
       {/* Charts row */}
       {/* items-stretch (the grid default) stretches the two columns to

@@ -170,10 +170,17 @@ export function AppointmentDialog({
     [members],
   );
 
-  const bookableServices = useMemo(
-    () => services.filter((s) => s.is_active && s.available_for_booking),
-    [services],
-  );
+  const bookableServices = useMemo(() => {
+    // Migration 054 — a member sees the services assigned to them
+    // PLUS the unassigned ones ("applies to all members"). Services
+    // assigned exclusively to other members are not offered.
+    return services.filter((s) => {
+      if (!s.is_active || !s.available_for_booking) return false;
+      if (!memberId) return true; // specialist not chosen yet
+      const ids = s.member_ids ?? [];
+      return ids.length === 0 || ids.includes(memberId);
+    });
+  }, [services, memberId]);
 
   // Reset state when the dialog opens.
   useEffect(() => {
@@ -210,8 +217,15 @@ export function AppointmentDialog({
       setCreatingContact(false);
       setContactQuery("");
       setContactHits([]);
-      // Preload the account's default service.
-      const def = services.find((s) => s.is_default && s.is_active);
+      // Preload the account's default service — only if the chosen
+      // specialist may use it (054 member assignment rule).
+      const mayUse = (s: AppointmentService) =>
+        !s.member_ids || s.member_ids.length === 0 || s.member_ids.includes(memberId || "");
+      const def =
+        services.find((s) => s.is_default && s.is_active && mayUse(s)) ??
+        services.find(
+          (s) => s.is_active && s.available_for_booking && mayUse(s),
+        );
       if (def) {
         setServiceId(def.id);
         setDuration(String(def.duration_minutes));
@@ -232,6 +246,17 @@ export function AppointmentDialog({
     },
     [services],
   );
+
+  // When the specialist changes, drop a selected service they don't
+  // offer (054 member assignment) so the save can't carry an invalid
+  // pair.
+  useEffect(() => {
+    if (!open || isEdit || !serviceId) return;
+    if (!bookableServices.some((s) => s.id === serviceId)) {
+      setServiceId("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberId]);
 
   // --- contact search (debounced) — runs while the search box is
   // visible (NOT in inline-creation mode; the condition was

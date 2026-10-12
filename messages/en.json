@@ -157,6 +157,20 @@
     },
     "emptyState": {
       "title": "Not enough data yet"
+    },
+    "agenda": {
+      "todayTitle": "Appointments today",
+      "todayBreakdown": "{pending} pending · {confirmed} confirmed · {late} late",
+      "next7Title": "Next 7 days",
+      "noShowTitle": "No-shows (30 days)",
+      "cancelledTitle": "Cancellations (30 days)",
+      "perMemberTodayTitle": "Today per member ({count} appointments)",
+      "load7Title": "Next-week load per member",
+      "topServicesTitle": "Top 3 services (30 days)",
+      "clientsWithNextTitle": "Clients with a next appointment",
+      "furthest": "Furthest booking: {date}",
+      "appointmentsCount": "{count} appointments",
+      "noData": "No data yet"
     }
   },
   "Inbox": {
@@ -2829,7 +2843,10 @@
       "colorInvalid": "Invalid color",
       "maxConcurrent": "Max concurrent appointments",
       "maxConcurrentHint": "How many clients can be attended at the same time on this service (availability counts against this limit)",
-      "maxConcurrentInvalid": "The concurrent capacity must be a whole number between 1 and 50"
+      "maxConcurrentInvalid": "The concurrent capacity must be a whole number between 1 and 50",
+      "members": "Assigned members",
+      "membersNone": "No team members yet",
+      "membersHint": "Leave empty and the service applies to ALL members. With members selected, only they see and can book it."
     },
     "table": {
       "name": "Description",
@@ -2838,8 +2855,11 @@
       "isDefault": "Default",
       "status": "Status",
       "actions": "Actions",
-      "maxConcurrent": "Concurrent"
-    }
+      "maxConcurrent": "Concurrent",
+      "members": "Members"
+    },
+    "membersAll": "All members",
+    "membersCount": "{count} member(s)"
   },
   "Agenda": {
     "title": "Agenda",

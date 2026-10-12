@@ -157,6 +157,20 @@
     },
     "emptyState": {
       "title": "Ainda não há dados suficientes"
+    },
+    "agenda": {
+      "todayTitle": "Agendamentos de hoje",
+      "todayBreakdown": "{pending} pendentes · {confirmed} confirmados · {late} atrasados",
+      "next7Title": "Próximos 7 dias",
+      "noShowTitle": "Não compareceu (30 dias)",
+      "cancelledTitle": "Cancelamentos (30 dias)",
+      "perMemberTodayTitle": "Hoje por membro ({count} agendamentos)",
+      "load7Title": "Carga da próxima semana por membro",
+      "topServicesTitle": "Top 3 serviços (30 dias)",
+      "clientsWithNextTitle": "Clientes com próxima cita",
+      "furthest": "Agendamento mais distante: {date}",
+      "appointmentsCount": "{count, plural, one {# agendamento} other {# agendamentos}}",
+      "noData": "Ainda não há dados"
     }
   },
   "Inbox": {
@@ -2829,7 +2843,10 @@
       "colorInvalid": "Cor inválida",
       "maxConcurrent": "Atendimentos simultâneos máximos",
       "maxConcurrentHint": "Quantos clientes podem ser atendidos no mesmo horário neste serviço (a disponibilidade é validada contra este limite)",
-      "maxConcurrentInvalid": "A capacidade simultânea deve ser um número inteiro entre 1 e 50"
+      "maxConcurrentInvalid": "A capacidade simultânea deve ser um número inteiro entre 1 e 50",
+      "members": "Membros atribuídos",
+      "membersNone": "Ainda não há membros da equipe",
+      "membersHint": "Deixe vazio = o serviço se aplica a TODOS os membros. Com membros selecionados, somente eles o veem e podem agendá-lo."
     },
     "table": {
       "name": "Descrição",
@@ -2838,8 +2855,11 @@
       "isDefault": "Padrão",
       "status": "Estado",
       "actions": "Ações",
-      "maxConcurrent": "Simultâneos"
-    }
+      "maxConcurrent": "Simultâneos",
+      "members": "Membros"
+    },
+    "membersAll": "Todos os membros",
+    "membersCount": "{count} membro(s)"
   },
   "Agenda": {
     "title": "Agenda",

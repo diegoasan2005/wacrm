@@ -46,6 +46,9 @@ export interface AppointmentService {
   /** How many simultaneous appointments this service allows on the
    *  same specialist at the same time (migration 049). */
   max_concurrent: number;
+  /** Team members assigned to offer this service (migration 054).
+   *  Empty/absent = the service applies to ALL members. */
+  member_ids?: string[];
   created_at: string;
   updated_at: string;
 }

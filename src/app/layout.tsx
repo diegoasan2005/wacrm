@@ -30,16 +30,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 const metadata: Metadata = {
   title: {
-    default: "wacrm",
-    template: "%s — wacrm",
+    default: "Luzdy CRM",
+    template: "%s — Luzdy CRM",
   },
   robots: {
     index: false,
     follow: false,
   },
-  icons: {
-    icon: [{ url: "/icon" }],
-  },
+  // The favicon is the static src/app/icon.png (Luzdy Jiménez "lj"
+  // monogram) — Next's file convention auto-injects <link rel="icon">.
   formatDetection: {
     email: false,
     address: false,

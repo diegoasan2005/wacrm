@@ -110,7 +110,7 @@ function daysLabel(days: number, t: (k: string, v?: Record<string, number>) => s
 
 export function HistoryView() {
   const t = useTranslations("AgendaHistory");
-  const { accountRole, accountTimezone, account } = useAuth();
+  const { accountRole, userId, accountTimezone, account } = useAuth();
   const timezone = accountTimezone || FALLBACK_TIMEZONE;
   const canSend = accountRole !== "viewer";
 
@@ -160,7 +160,7 @@ export function HistoryView() {
     void loadHistory();
   }, [loadHistory]);
 
-  // Services for the filter + members for tooltips.
+  // Team roster + services for the filter (role/member aware).
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -173,13 +173,21 @@ export function HistoryView() {
         fetchAccountMembers(),
       ]);
       if (cancelled) return;
-      setServices(svcRes.services ?? []);
+      // Migration 054 — each member filters by the services assigned
+      // to them PLUS the unassigned ("applies to all") ones.
+      const all = svcRes.services ?? [];
+      setServices(
+        all.filter((s) => {
+          const ids = s.member_ids ?? [];
+          return ids.length === 0 || (!!userId && ids.includes(userId));
+        }),
+      );
       setMembers(memberList);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userId]);
 
   const specialistName = useCallback(
     (userId: string) => {

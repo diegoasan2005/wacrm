@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,6 +38,8 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { canManageServices } from "@/lib/appointments/permissions";
 import { DEFAULT_DURATIONS } from "@/lib/appointments/constants";
+import { fetchAccountMembers, memberLabel } from "@/lib/account/members";
+import type { AccountMember } from "@/types";
 import type { AppointmentService } from "@/types/appointments";
 
 const PAGE_SIZE = 25;
@@ -51,6 +54,7 @@ const EMPTY_FORM = {
   color: "",
   description: "",
   max_concurrent: "1",
+  member_ids: [] as string[],
 };
 
 interface FormState {
@@ -63,6 +67,7 @@ interface FormState {
   color: string;
   description: string;
   max_concurrent: string;
+  member_ids: string[];
 }
 
 export function ServicesManager() {
@@ -71,6 +76,7 @@ export function ServicesManager() {
   const canWrite = accountRole ? canManageServices(accountRole) : false;
 
   const [services, setServices] = useState<AppointmentService[]>([]);
+  const [members, setMembers] = useState<AccountMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -107,6 +113,17 @@ export function ServicesManager() {
     void loadServices();
   }, [loadServices]);
 
+  // Team roster for the member assignment checkboxes.
+  useEffect(() => {
+    let cancelled = false;
+    void fetchAccountMembers().then((list) => {
+      if (!cancelled) setMembers(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Search filter (case-insensitive, on the loaded set — services
   // lists are small; server-side search would be over-engineering).
   const filtered = useMemo(() => {
@@ -141,6 +158,7 @@ export function ServicesManager() {
       color: service.color ?? "",
       description: service.description ?? "",
       max_concurrent: String(service.max_concurrent ?? 1),
+      member_ids: service.member_ids ?? [],
     });
     nameRef.current?.focus();
   }
@@ -189,6 +207,7 @@ export function ServicesManager() {
         color: form.color === "" ? null : form.color,
         description: form.description.trim() || null,
         max_concurrent: Number(form.max_concurrent),
+        member_ids: form.member_ids,
       };
       const res = await fetch(
         editingId ? `/api/services/${editingId}` : "/api/services",
@@ -364,6 +383,38 @@ export function ServicesManager() {
                 {t("form.maxConcurrentHint")}
               </p>
             </div>
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
+              <Label>{t("form.members")}</Label>
+              <div className="max-h-36 overflow-y-auto rounded-md border border-border bg-background px-3 py-2">
+                {members.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t("form.membersNone")}</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {members.map((m) => (
+                      <label
+                        key={m.user_id}
+                        className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
+                      >
+                        <Checkbox
+                          checked={form.member_ids.includes(m.user_id)}
+                          onCheckedChange={(v) =>
+                            setForm((f) => ({
+                              ...f,
+                              member_ids: v
+                                ? [...f.member_ids, m.user_id]
+                                : f.member_ids.filter((id) => id !== m.user_id),
+                            }))
+                          }
+                          aria-label={memberLabel(m)}
+                        />
+                        {memberLabel(m)}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("form.membersHint")}</p>
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="service-price">
                 {t("form.price", { currency: defaultCurrency })}
@@ -499,6 +550,9 @@ export function ServicesManager() {
               <TableHead className="text-muted-foreground hidden lg:table-cell">
                 {t("table.maxConcurrent")}
               </TableHead>
+              <TableHead className="text-muted-foreground hidden xl:table-cell">
+                {t("table.members")}
+              </TableHead>
               <TableHead className="text-muted-foreground">{t("table.isDefault")}</TableHead>
               <TableHead className="text-muted-foreground">{t("table.status")}</TableHead>
               {canWrite && (
@@ -509,13 +563,13 @@ export function ServicesManager() {
           <TableBody>
             {loading ? (
               <TableRow className="border-border">
-                <TableCell colSpan={6} className="text-center py-12">
+                <TableCell colSpan={7} className="text-center py-12">
                   <Loader2 className="size-6 animate-spin text-primary mx-auto" />
                 </TableCell>
               </TableRow>
             ) : pageRows.length === 0 ? (
               <TableRow className="border-border">
-                <TableCell colSpan={6} className="text-center py-12 text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-12 text-sm text-muted-foreground">
                   {search ? t("noMatch") : t("empty")}
                 </TableCell>
               </TableRow>
@@ -549,6 +603,19 @@ export function ServicesManager() {
                   </TableCell>
                   <TableCell className="text-muted-foreground hidden lg:table-cell">
                     {service.max_concurrent ?? 1}
+                  </TableCell>
+                  <TableCell className="hidden xl:table-cell">
+                    {(service.member_ids ?? []).length === 0 ? (
+                      <Badge className="border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+                        {t("membersAll")}
+                      </Badge>
+                    ) : (
+                      <Badge className="border-border bg-muted text-muted-foreground">
+                        {t("membersCount", {
+                          count: (service.member_ids ?? []).length,
+                        })}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>
                     {service.is_default ? (

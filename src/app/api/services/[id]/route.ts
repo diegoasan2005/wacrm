@@ -32,7 +32,9 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const body = (await request.json().catch(() => null)) as unknown;
+    const body = (await request.json().catch(() => null)) as
+      | (Record<string, unknown> & { member_ids?: unknown })
+      | null;
     const input = normalizeServiceInput(body, true);
     if (!input.ok) {
       return NextResponse.json({ error: input.error }, { status: 400 });
@@ -82,7 +84,43 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ service: data });
+    // Member assignments (054). Absent key = keep current rows; an
+    // array (even empty) replaces them (empty = applies to all).
+    if (Array.isArray(body?.member_ids)) {
+      try {
+        await ctx.supabase
+          .from("appointment_service_members")
+          .delete()
+          .eq("service_id", id)
+          .eq("account_id", ctx.accountId);
+
+        const memberIds = body.member_ids as string[];
+        if (memberIds.length > 0) {
+          const { error: mErr } = await ctx.supabase
+            .from("appointment_service_members")
+            .insert(
+              memberIds.map((user_id) => ({
+                service_id: id,
+                user_id,
+                account_id: ctx.accountId,
+              })),
+            );
+          if (mErr) throw mErr;
+        }
+      } catch (memberErr) {
+        console.error("[PATCH /api/services/[id]] member sync error:", memberErr);
+        return NextResponse.json({ error: t("agenda.serviceSaveFailed") }, { status: 500 });
+      }
+    }
+
+    return NextResponse.json({
+      service: {
+        ...data,
+        member_ids: Array.isArray(body?.member_ids)
+          ? body.member_ids
+          : undefined,
+      },
+    });
   } catch (err) {
     return toErrorResponse(err);
   }

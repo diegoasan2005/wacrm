@@ -157,6 +157,20 @@
     },
     "emptyState": {
       "title": "아직 데이터가 충분하지 않습니다"
+    },
+    "agenda": {
+      "todayTitle": "오늘 예약",
+      "todayBreakdown": "대기 {pending} · 확정 {confirmed} · 지각 {late}",
+      "next7Title": "향후 7일",
+      "noShowTitle": "불참 (30일)",
+      "cancelledTitle": "취소 (30일)",
+      "perMemberTodayTitle": "멤버별 오늘 ({count}건)",
+      "load7Title": "멤버별 다음 주 예약 부하",
+      "topServicesTitle": "Top 3 서비스 (30일)",
+      "clientsWithNextTitle": "다음 예약이 있는 고객",
+      "furthest": "가장 먼 예약: {date}",
+      "appointmentsCount": "{count}건",
+      "noData": "아직 데이터가 없습니다"
     }
   },
   "Inbox": {
@@ -2829,7 +2843,10 @@
       "colorInvalid": "잘못된 색상입니다",
       "maxConcurrent": "최대 동시 예약 수",
       "maxConcurrentHint": "이 서비스를 같은 시간에 받을 수 있는 고객 수입니다(가용성이 이 한도로 검증됩니다)",
-      "maxConcurrentInvalid": "동시 수용 인원은 1에서 50 사이의 정수여야 합니다"
+      "maxConcurrentInvalid": "동시 수용 인원은 1에서 50 사이의 정수여야 합니다",
+      "members": "할당된 멤버",
+      "membersNone": "아직 팀 멤버가 없습니다",
+      "membersHint": "비워 두면 모든 멤버에게 적용됩니다. 멤버를 선택하면 해당 멤버만 보고 예약할 수 있습니다."
     },
     "table": {
       "name": "설명",
@@ -2838,8 +2855,11 @@
       "isDefault": "기본",
       "status": "상태",
       "actions": "작업",
-      "maxConcurrent": "동시"
-    }
+      "maxConcurrent": "동시",
+      "members": "멤버"
+    },
+    "membersAll": "모든 멤버",
+    "membersCount": "{count}명"
   },
   "Agenda": {
     "title": "일정",

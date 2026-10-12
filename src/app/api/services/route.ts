@@ -1,13 +1,15 @@
 // ============================================================
-// /api/services — appointment services administration (047)
+// /api/services — appointment services administration (047/054)
 //
-//   GET   — list the account's services. Any member (agents need
-//           the menu to book; RLS scopes the rows).
-//   POST  — create a service. Admin+ (RLS enforces; we pre-check
-//           for the friendly 403).
+//   GET   — list the account's services, each with its assigned
+//           member ids (empty = applies to all members). Any member
+//           (agents need the menu to book; RLS scopes the rows).
+//   POST  — create a service + optional member assignments.
+//           Admin+ (RLS enforces; we pre-check for the 403).
 // ============================================================
 
 import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getCurrentAccount, toErrorResponse } from "@/lib/auth/account";
 import { hasMinRole } from "@/lib/auth/roles";
@@ -19,22 +21,67 @@ import {
 
 const t = getT("Api");
 
+/** Insert the member rows for a service, replacing previous ones. */
+async function syncServiceMembers(
+  supabase: SupabaseClient,
+  accountId: string,
+  serviceId: string,
+  memberIds: string[],
+) {
+  await supabase
+    .from("appointment_service_members")
+    .delete()
+    .eq("service_id", serviceId)
+    .eq("account_id", accountId);
+
+  if (memberIds.length > 0) {
+    const { error } = await supabase.from("appointment_service_members").insert(
+      memberIds.map((user_id) => ({
+        service_id: serviceId,
+        user_id,
+        account_id: accountId,
+      })),
+    );
+    if (error) throw error;
+  }
+}
+
 export async function GET() {
   try {
     const ctx = await getCurrentAccount();
 
-    const { data, error } = await ctx.supabase
-      .from("appointment_services")
-      .select("*")
-      .eq("account_id", ctx.accountId)
-      .order("name", { ascending: true });
+    const [servicesRes, membersRes] = await Promise.all([
+      ctx.supabase
+        .from("appointment_services")
+        .select("*")
+        .eq("account_id", ctx.accountId)
+        .order("name", { ascending: true }),
+      ctx.supabase
+        .from("appointment_service_members")
+        .select("service_id, user_id")
+        .eq("account_id", ctx.accountId),
+    ]);
 
-    if (error) {
-      console.error("[GET /api/services] fetch error:", error);
+    if (servicesRes.error || membersRes.error) {
+      const err = servicesRes.error ?? membersRes.error;
+      console.error("[GET /api/services] fetch error:", err);
       return NextResponse.json({ error: t("agenda.serviceLoadFailed") }, { status: 500 });
     }
 
-    return NextResponse.json({ services: data });
+    // Map service_id → assigned member ids.
+    const byService = new Map<string, string[]>();
+    for (const row of membersRes.data ?? []) {
+      const list = byService.get(row.service_id) ?? [];
+      list.push(row.user_id);
+      byService.set(row.service_id, list);
+    }
+
+    const services = (servicesRes.data ?? []).map((s) => ({
+      ...s,
+      member_ids: byService.get(s.id) ?? [],
+    }));
+
+    return NextResponse.json({ services });
   } catch (err) {
     return toErrorResponse(err);
   }
@@ -47,7 +94,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: t("agenda.adminRequired") }, { status: 403 });
     }
 
-    const body = (await request.json().catch(() => null)) as unknown;
+    const body = (await request.json().catch(() => null)) as
+      | (Record<string, unknown> & { member_ids?: unknown })
+      | null;
     const input = normalizeServiceInput(body);
     if (!input.ok) {
       return NextResponse.json({ error: input.error }, { status: 400 });
@@ -73,6 +122,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: t("agenda.serviceSaveFailed") }, { status: 500 });
     }
 
+    // Member assignments (054). Only when the field was sent — an
+    // absent key means "applies to all members".
+    if (Array.isArray(body?.member_ids)) {
+      try {
+        await syncServiceMembers(
+          ctx.supabase,
+          ctx.accountId,
+          data.id,
+          body.member_ids as string[],
+        );
+      } catch (memberErr) {
+        console.error("[POST /api/services] member sync error:", memberErr);
+        return NextResponse.json({ error: t("agenda.serviceSaveFailed") }, { status: 500 });
+      }
+    }
+
     // Default flag is moved atomically by the RPC (retires the old
     // default in the same transaction).
     if (data.is_default) {
@@ -84,7 +149,10 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ service: data }, { status: 201 });
+    return NextResponse.json(
+      { service: { ...data, member_ids: Array.isArray(body?.member_ids) ? body.member_ids : [] } },
+      { status: 201 },
+    );
   } catch (err) {
     return toErrorResponse(err);
   }

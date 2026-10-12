@@ -152,7 +152,7 @@ export function AgendaView() {
       const nowMin = utcToMinutes(new Date(), timezone);
       setDialogPreset({
         dateKey: utcToDateKey(new Date(), timezone),
-        minutes: Math.floor(nowMin / 15) * 15,
+        minutes: Math.floor(nowMin / 30) * 30,
         memberId: userId ?? undefined,
         contactId,
       });
@@ -310,14 +310,14 @@ export function AgendaView() {
       toast.error(t("readOnly"));
       return;
     }
-    // Default to the CURRENT time (snapped to the 15-minute grid)
+    // Default to the CURRENT time (snapped to the 30-minute grid)
     // when opened from the "Nueva cita" button; slot clicks pass
     // their own minutes.
     const nowMin = utcToMinutes(new Date(), timezone);
     const effective =
       minutes !== undefined
         ? minutes
-        : Math.floor(nowMin / 15) * 15;
+        : Math.floor(nowMin / 30) * 30;
     setDialogAppointment(null);
     setDialogPreset({
       dateKey,
