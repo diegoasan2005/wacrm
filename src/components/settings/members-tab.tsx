@@ -62,6 +62,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useTranslations } from 'next-intl';
 import { RequireRole } from '@/components/auth/require-role';
 import { useAuth } from '@/hooks/use-auth';
@@ -83,6 +84,8 @@ interface Member {
   avatar_url: string | null;
   role: AccountRole;
   joined_at: string;
+  can_book_appointments?: boolean;
+  show_in_agenda?: boolean;
 }
 
 interface Invitation {
@@ -179,6 +182,105 @@ export function MembersTab() {
   useEffect(() => {
     void loadEverything();
   }, [loadEverything]);
+
+  async function handleAgendaVisibilityChange(member: Member, next: boolean) {
+    // Optimistic flip with revert on failure. Works on ANY role —
+    // including the owner's own row — because the flag only decides
+    // whether the member is listed as a bookable specialist.
+    const previous = member.show_in_agenda ?? true;
+    setPendingMemberAction(member.user_id);
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.user_id === member.user_id ? { ...m, show_in_agenda: next } : m,
+      ),
+    );
+    try {
+      const res = await fetch(`/api/account/members/${member.user_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showInAgenda: next }),
+      });
+      if (!res.ok) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === member.user_id
+              ? { ...m, show_in_agenda: previous }
+              : m,
+          ),
+        );
+        const payload = await res.json().catch(() => ({}));
+        toast.error(payload.error || t("agendaVisibilityFailed"));
+        return;
+      }
+      toast.success(
+        next
+          ? t("agendaVisibilityOn", { name: member.full_name || t("unnamed") })
+          : t("agendaVisibilityOff", { name: member.full_name || t("unnamed") }),
+      );
+    } catch (err) {
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.user_id === member.user_id
+            ? { ...m, show_in_agenda: previous }
+            : m,
+        ),
+      );
+      console.error("[MembersTab] agenda visibility error:", err);
+      toast.error(t("networkError"));
+    } finally {
+      setPendingMemberAction(null);
+    }
+  }
+
+  async function handleBookingPermissionChange(member: Member, next: boolean) {
+    // Optimistic flip with revert on failure — same pattern as the
+    // role dropdown above.
+    const previous = member.can_book_appointments ?? false;
+    setPendingMemberAction(member.user_id);
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.user_id === member.user_id
+          ? { ...m, can_book_appointments: next }
+          : m,
+      ),
+    );
+    try {
+      const res = await fetch(`/api/account/members/${member.user_id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ canBookAppointments: next }),
+      });
+      if (!res.ok) {
+        setMembers((prev) =>
+          prev.map((m) =>
+            m.user_id === member.user_id
+              ? { ...m, can_book_appointments: previous }
+              : m,
+          ),
+        );
+        const payload = await res.json().catch(() => ({}));
+        toast.error(payload.error || t("bookingPermissionFailed"));
+        return;
+      }
+      toast.success(
+        next
+          ? t("bookingPermissionOn", { name: member.full_name || t("unnamed") })
+          : t("bookingPermissionOff", { name: member.full_name || t("unnamed") }),
+      );
+    } catch (err) {
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.user_id === member.user_id
+            ? { ...m, can_book_appointments: previous }
+            : m,
+        ),
+      );
+      console.error("[MembersTab] booking permission error:", err);
+      toast.error(t("networkError"));
+    } finally {
+      setPendingMemberAction(null);
+    }
+  }
 
   async function handleRoleChange(member: Member, nextRole: AccountRole) {
     if (member.role === nextRole) return;
@@ -295,6 +397,15 @@ export function MembersTab() {
         }
       />
 
+      {/* Agenda permission explainer — the booking switch only
+          renders on AGENT rows, so without this hint an owner
+          testing solo has no idea where the control lives. */}
+      {canManageMembers && (
+        <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
+          {t('bookingHint')}
+        </p>
+      )}
+
       {/* Live presence summary across the roster. Updates without a
           full refresh as heartbeats and the local re-derive tick land. */}
       {members.length > 0 &&
@@ -410,6 +521,47 @@ export function MembersTab() {
                       inline. Items align to the start on mobile so the
                       role dropdown lines up under the avatar. */}
                   <div className="flex items-center gap-2 sm:gap-3">
+                    {/* "Visible en agenda" (migration 048) — decides
+                        whether the member is listed as a bookable
+                        specialist, for ANY role (owner included).
+                        Editable by admin+, own row included. */}
+                    {canManageMembers && (
+                      <label
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                        title={t('agendaVisibilityTitle')}
+                      >
+                        <Switch
+                          checked={member.show_in_agenda ?? true}
+                          onCheckedChange={(v) =>
+                            handleAgendaVisibilityChange(member, v)
+                          }
+                          disabled={isBusy}
+                          aria-label={t('agendaVisibility')}
+                        />
+                        {t('agendaVisibility')}
+                      </label>
+                    )}
+                    {/* "Puede registrar citas" — rendered on EVERY
+                        row so the owner can pre-set it, but it is
+                        only *effective* for agents: admins/owners
+                        can always book and viewers never can,
+                        regardless of the stored flag. */}
+                    {canManageMembers && (
+                      <label
+                        className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                        title={t('bookingPermissionTitle')}
+                      >
+                        <Switch
+                          checked={member.can_book_appointments ?? false}
+                          onCheckedChange={(v) =>
+                            handleBookingPermissionChange(member, v)
+                          }
+                          disabled={isBusy}
+                          aria-label={t('bookingPermission')}
+                        />
+                        {t('bookingPermission')}
+                      </label>
+                    )}
                     {/* Role display / editor. Inline Select is admin+
                         only AND not allowed on the owner row (owner
                         changes go through transfer, which lands later). */}

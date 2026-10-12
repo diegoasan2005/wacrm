@@ -1,9 +1,17 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
-    alias: { "@app-messages": new URL("./messages/en.json", import.meta.url).pathname },
+    // fileURLToPath (not URL#pathname): on Windows pathname yields
+    // "/D:/…", which Node then treats as a bare specifier and every
+    // suite importing @app-messages fails to load.
+    alias: {
+      "@app-messages": fileURLToPath(
+        new URL("./messages/en.json", import.meta.url),
+      ),
+    },
   },
   test: {
     environment: "node",

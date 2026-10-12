@@ -1,17 +1,16 @@
 // ============================================================
 // /api/account/members/[userId]
 //
-//   PATCH  — change a member's role.   Admin+.
+//   PATCH  — change a member's role, or toggle their agenda
+//            booking flag ("Puede registrar citas").  Admin+.
 //   DELETE — remove a member.          Admin+.
 //
-// Both delegate to SECURITY DEFINER RPCs from migration 018:
-//   - set_member_role(p_user_id, p_new_role)
-//   - remove_account_member(p_user_id)
-//
-// The RPCs do the *real* authorisation work — caller must be
-// admin+, target must be in caller's account, target can't be the
-// owner, can't be self. The TS layer here only forwards the call
-// and maps Postgres SQLSTATEs back to HTTP statuses.
+// Role changes delegate to the set_member_role RPC (migration 018);
+// the booking flag to set_member_booking_permission (migration
+// 047). Both RPCs do the *real* authorisation work — caller must
+// be admin+, target must be in caller's account. The TS layer
+// only forwards the call and maps Postgres SQLSTATEs back to
+// HTTP statuses.
 // ============================================================
 
 import { NextResponse } from "next/server";
@@ -61,8 +60,38 @@ export async function PATCH(
     const { userId } = await params;
 
     const body = (await request.json().catch(() => null)) as
-      | { role?: unknown }
+      | { role?: unknown; canBookAppointments?: unknown; showInAgenda?: unknown }
       | null;
+
+    // Booking-flag branch: exactly one of the fields is acted on per
+    // request; each RPC validates the target against the caller's
+    // account.
+    if (body && "canBookAppointments" in body && typeof body.canBookAppointments === "boolean") {
+      const { error } = await ctx.supabase.rpc(
+        "set_member_booking_permission",
+        {
+          p_user_id: userId,
+          p_can_book: body.canBookAppointments,
+        },
+      );
+      if (error) return rpcErrorToResponse(error);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Agenda-visibility branch (migration 048) — any member, any
+    // role; the owner can hide themselves from the agenda.
+    if (body && "showInAgenda" in body && typeof body.showInAgenda === "boolean") {
+      const { error } = await ctx.supabase.rpc(
+        "set_member_agenda_visibility",
+        {
+          p_user_id: userId,
+          p_visible: body.showInAgenda,
+        },
+      );
+      if (error) return rpcErrorToResponse(error);
+      return NextResponse.json({ ok: true });
+    }
+
     const role = body?.role;
 
     if (!isAccountRole(role)) {

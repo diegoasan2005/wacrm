@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vendored minified opus-recorder encoder worker (served statically).
     "public/opus/**",
+    // BMad Method skill resources (agent tooling, not app code).
+    ".claude/**",
+    "_bmad/**",
   ]),
 ]);
 

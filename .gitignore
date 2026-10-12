@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Credenciales locales (no subir)
+.01 - Informacion de configuracion.txt

@@ -6,11 +6,18 @@ import {
   formatCurrencyShort,
 } from "./currency";
 
+// Grouping-tolerant digits check: whether "1,234" or "1234" depends
+// on the runtime locale's minimumGroupingDigits (es locales keep
+// 4-digit amounts ungrouped), so assert on the digits themselves.
+function digitsOf(out: string): string {
+  return out.replace(/\D/g, "");
+}
+
 describe("formatCurrency", () => {
   it("formats whole amounts with no minor units", () => {
     // Use a non-breaking-space-tolerant check: Intl may insert NBSP.
     const out = formatCurrency(1234, "USD");
-    expect(out).toContain("1,234");
+    expect(digitsOf(out)).toBe("1234");
     expect(out).not.toContain(".00");
   });
 
@@ -30,13 +37,17 @@ describe("formatCurrency", () => {
     // Intl is lenient here — it uses the code as the symbol.
     const out = formatCurrency(1234, "ZZZ");
     expect(out).toContain("ZZZ");
-    expect(out).toContain("1,234");
+    expect(digitsOf(out)).toBe("1234");
   });
 
   it("never throws on a structurally invalid code (no DB CHECK on deals.currency)", () => {
     for (const bad of ["United States", "US", "USDD", "12", "u$d"]) {
       expect(() => formatCurrency(1234, bad)).not.toThrow();
-      expect(formatCurrency(1234, bad)).toContain("1,234");
+      // The amount must survive intact. Modulo, not exact digits:
+      // a purely numeric bad code ("12") merges with the amount in
+      // a digits-only check.
+      const digits = digitsOf(formatCurrency(1234, bad));
+      expect(Number(digits) % 10000).toBe(1234);
     }
   });
 

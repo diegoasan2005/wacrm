@@ -17,6 +17,7 @@ import {
   canEditSettings as canEditSettingsFor,
   canManageMembers as canManageMembersFor,
   canSendMessages as canSendMessagesFor,
+  hasMinRole as hasMinRoleFor,
   isAccountRole,
   type AccountRole,
 } from "@/lib/auth/roles";
@@ -35,6 +36,11 @@ interface Profile {
   beta_features: string[];
   account_id: string | null;
   account_role: AccountRole | null;
+  /**
+   * "Puede registrar citas" — per-membership agenda write flag for
+   * agents (migration 047). Admin+ can always book; viewers never.
+   */
+  can_book_appointments: boolean;
 }
 
 interface AccountSummary {
@@ -43,6 +49,9 @@ interface AccountSummary {
   /** Default deal currency (ISO-4217). NOT NULL DEFAULT 'USD' in the
    *  DB (migration 021); narrowed to DEFAULT_CURRENCY when absent. */
   default_currency: string;
+  /** IANA timezone for agenda display + scheduling rules
+   *  (migration 047). Falls back to Bogotá on older schemas. */
+  timezone: string;
 }
 
 /**
@@ -66,6 +75,9 @@ export type AccountStatus =
 
 interface AuthContextValue {
   user: User | null;
+  /** `auth.uid()` of the signed-in user, or null. Convenience for
+   *  agenda ownership checks (migration 047 components). */
+  userId: string | null;
   profile: Profile | null;
   /**
    * Session-level loading. Flips to false as soon as we know whether
@@ -116,6 +128,13 @@ interface AuthContextValue {
    *  while loading or when no account is resolved, so callers can use
    *  it unconditionally. */
   defaultCurrency: string;
+  /** IANA timezone of the account (agenda display + scheduling).
+   *  Falls back to 'America/Bogota'. */
+  accountTimezone: string;
+  /** "Puede registrar citas" — resolved from the role AND the
+   *  per-membership flag: admin+ always true, agents per flag,
+   *  viewers always false. */
+  canBookAppointments: boolean;
   /** True if `accountRole === 'owner'`. */
   isOwner: boolean;
   /** True if `accountRole === 'admin'` (does NOT include owner — use canManageMembers for "admin or above"). */
@@ -152,6 +171,7 @@ interface ProfileRow {
   beta_features: string[] | null;
   account_id: string | null;
   account_role: string | null;
+  can_book_appointments: boolean | null;
 }
 
 /**
@@ -192,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await supabase
           .from("profiles")
           .select(
-            "id, full_name, email, avatar_url, role, beta_features, account_id, account_role",
+            "id, full_name, email, avatar_url, role, beta_features, account_id, account_role, can_book_appointments",
           )
           .eq("user_id", userId)
           .maybeSingle();
@@ -237,9 +257,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.account_id) {
           const { data: account, error: accountErr } = await supabase
             .from("accounts")
-            // default_currency added in migration 021; narrowed to the
-            // USD fallback below for older schemas where it reads null.
-            .select("id, name, default_currency")
+            // default_currency added in migration 021, timezone in 047;
+            // both narrowed to their fallbacks below for older schemas
+            // where they read null.
+            .select("id, name, default_currency, timezone")
             .eq("id", data.account_id)
             .maybeSingle();
           if (accountErr) {
@@ -254,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: account.id,
               name: account.name,
               default_currency: account.default_currency ?? DEFAULT_CURRENCY,
+              timezone: account.timezone ?? "America/Bogota",
             };
           }
         }
@@ -280,6 +302,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           beta_features: data.beta_features ?? [],
           account_id: data.account_id ?? null,
           account_role: accountRole,
+          // Same defensive narrowing for the 047 flag: absent column
+          // (pre-migration deploy) reads as no booking permission.
+          can_book_appointments: data.can_book_appointments ?? false,
         });
         setAccount(accountRow);
         if (!data.account_id || !accountRole) {
@@ -410,8 +435,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       canManageMembers: role ? canManageMembersFor(role) : false,
       canEditSettings: role ? canEditSettingsFor(role) : false,
       canSendMessages: role ? canSendMessagesFor(role) : false,
+      // Agenda write permission: admin+ inherent; agents gated by
+      // the per-membership flag; viewers never (module spec §6.2).
+      canBookAppointments: role
+        ? hasMinRoleFor(role, "admin") ||
+          (role === "agent" && !!profile?.can_book_appointments)
+        : false,
     };
-  }, [profile?.account_role, profile?.account_id]);
+  }, [profile?.account_role, profile?.account_id, profile?.can_book_appointments]);
 
   // Signed out is not a broken account — the shell redirects to /login
   // before anything reads this.
@@ -429,6 +460,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        userId: user?.id ?? null,
         profile,
         loading,
         profileLoading,
@@ -436,6 +468,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshProfile,
         account,
         defaultCurrency: account?.default_currency ?? DEFAULT_CURRENCY,
+        accountTimezone: account?.timezone ?? "America/Bogota",
         accountStatus,
         accountStatusDetail: statusDetail,
         ...derived,
@@ -459,6 +492,7 @@ export function useAuth(): AuthContextValue {
     // false so UI gates fail closed.
     return {
       user: null,
+      userId: null,
       profile: null,
       loading: false,
       profileLoading: false,
@@ -468,6 +502,7 @@ export function useAuth(): AuthContextValue {
       refreshProfile: async () => {},
       account: null,
       defaultCurrency: DEFAULT_CURRENCY,
+      accountTimezone: "America/Bogota",
       // Outside the provider there is nothing to resolve yet — 'loading'
       // keeps the access alert from firing on, say, the login page.
       accountStatus: "loading",
@@ -481,6 +516,7 @@ export function useAuth(): AuthContextValue {
       canManageMembers: false,
       canEditSettings: false,
       canSendMessages: false,
+      canBookAppointments: false,
     };
   }
   return ctx;

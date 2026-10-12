@@ -45,6 +45,12 @@ export interface Profile {
    * `@/lib/auth/roles` rather than comparing this string directly.
    */
   account_role?: AccountRole;
+  /**
+   * Per-membership "Puede registrar citas" agenda flag (migration
+   * 047). Only meaningful for agents — admin+ can always book,
+   * viewers never can, regardless of this flag.
+   */
+  can_book_appointments?: boolean;
   created_at: string;
 }
 
@@ -75,6 +81,13 @@ export interface AccountMember {
   avatar_url: string | null;
   role: AccountRole;
   joined_at: string;
+  /** "Puede registrar citas" flag (migration 047). Only meaningful
+   *  for agents; surfaced to admins+ via the members endpoint. */
+  can_book_appointments?: boolean;
+  /** "Visible en agenda" flag (migration 048). Decides whether the
+   *  member is listed as a bookable specialist (agenda columns +
+   *  picker), regardless of role. Visible to every member. */
+  show_in_agenda?: boolean;
 }
 
 /**

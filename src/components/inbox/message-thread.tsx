@@ -7,6 +7,8 @@ import { usePresence } from "@/hooks/use-presence";
 import { PresenceDot } from "@/components/presence/presence-dot";
 import { presenceLabel } from "@/lib/presence";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { CalendarDays } from "lucide-react";
 import type {
   Conversation,
   Message,
@@ -166,6 +168,7 @@ export function MessageThread({
   onToggleContactPanel,
 }: MessageThreadProps) {
   const t = useTranslations("Inbox.messageThread");
+  const router = useRouter();
   const tTimer = useTranslations("Inbox.sessionTimer");
   const tQuote = useTranslations("Inbox.replyQuote");
 
@@ -988,6 +991,22 @@ export function MessageThread({
               <RefreshCw
                 className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")}
               />
+            </button>
+          )}
+
+          {/* Book appointment — non-invasive agenda hand-off: opens
+              the Agenda with this conversation's contact preloaded
+              (deep link /agenda?contact=…). No WhatsApp sending is
+              triggered from here. */}
+          {contact && (
+            <button
+              type="button"
+              onClick={() => router.push(`/agenda?contact=${contact.id}`)}
+              aria-label={t("bookAppointment")}
+              title={t("bookAppointment")}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <CalendarDays className="h-3.5 w-3.5" />
             </button>
           )}
 

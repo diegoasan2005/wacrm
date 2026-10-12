@@ -10,8 +10,11 @@ import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import {
   Bell,
   Bot,
+  Briefcase,
+  CalendarDays,
   Crown,
   GitBranch,
+  History,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -94,6 +97,9 @@ const navItems: NavItem[] = [
   { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
   { href: "/notifications", labelKey: "notifications", icon: Bell },
   { href: "/contacts", labelKey: "contacts", icon: Users },
+  { href: "/agenda", labelKey: "agenda", icon: CalendarDays },
+  { href: "/agenda-historial", labelKey: "agendaHistorial", icon: History },
+  { href: "/services", labelKey: "services", icon: Briefcase },
   { href: "/pipelines", labelKey: "pipelines", icon: GitBranch },
   { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
   { href: "/automations", labelKey: "automations", icon: Zap },
@@ -209,9 +215,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="flex flex-col gap-1">
             {navItems.map((item) => {
+              // Exact match, or a true segment boundary ("/agenda"
+              // must NOT light up on "/agenda-historial").
               const isActive =
                 pathname === item.href ||
-                (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                (item.href !== "/dashboard" &&
+                  pathname.startsWith(item.href + "/"));
 
               const showUnreadDot =
                 item.href === "/inbox" && totalUnread > 0 && !isActive;

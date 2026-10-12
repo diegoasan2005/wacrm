@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { addContactTag, deleteContactTag } from '@/lib/contacts/tag-api';
 import { useAuth } from '@/hooks/use-auth';
@@ -43,6 +44,8 @@ import {
 import { useTranslations } from 'next-intl';
 import { contactHandle } from '@/lib/whatsapp/wa-identity';
 import { parseInternationalPhone } from '@/lib/whatsapp/phone-utils';
+import { CalendarDays } from 'lucide-react';
+import { ContactAppointments } from '@/components/agenda/contact-appointments';
 
 interface ContactDetailViewProps {
   open: boolean;
@@ -59,6 +62,7 @@ export function ContactDetailView({
 }: ContactDetailViewProps) {
   const t = useTranslations('Contacts.detailView');
   const supabase = createClient();
+  const router = useRouter();
   const { accountId, defaultCurrency } = useAuth();
 
   const [contact, setContact] = useState<Contact | null>(null);
@@ -444,7 +448,7 @@ export function ContactDetailView({
                   </div>
                 </div>
               </div>
-              <div className="mt-3">
+              <div className="mt-3 flex items-center gap-2">
                 <Button
                   size="sm"
                   onClick={() => setTemplatePickerOpen(true)}
@@ -457,6 +461,18 @@ export function ContactDetailView({
                     <LayoutTemplate className="size-4" />
                   )}
                   {t('sendTemplateBtn')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    onOpenChange(false);
+                    router.push(`/agenda?contact=${contact.id}`);
+                  }}
+                  className="border-border text-muted-foreground hover:bg-muted"
+                >
+                  <CalendarDays className="size-4" />
+                  {t('bookAppointmentBtn')}
                 </Button>
               </div>
             </SheetHeader>
@@ -494,7 +510,18 @@ export function ContactDetailView({
                 >
                   {t('tabs.deals')}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="appointments"
+                  className="data-active:bg-muted data-active:text-primary text-muted-foreground"
+                >
+                  {t('tabs.appointments')}
+                </TabsTrigger>
               </TabsList>
+
+              {/* Appointments tab (agenda history — migration 047) */}
+              <TabsContent value="appointments" className="flex-1 overflow-y-auto px-4 py-3">
+                {contact && <ContactAppointments contactId={contact.id} />}
+              </TabsContent>
 
               {/* Details Tab */}
               <TabsContent value="details" className="flex-1 overflow-y-auto px-4 py-3">

@@ -28,6 +28,8 @@ interface ProfileRow {
   avatar_url: string | null;
   account_role: string;
   created_at: string;
+  can_book_appointments?: boolean;
+  show_in_agenda?: boolean;
 }
 
 export async function GET() {
@@ -38,7 +40,9 @@ export async function GET() {
     // the caller's, so this query is naturally account-scoped.
     const { data, error } = await ctx.supabase
       .from("profiles")
-      .select("user_id, full_name, email, avatar_url, account_role, created_at")
+      .select(
+        "user_id, full_name, email, avatar_url, account_role, created_at, can_book_appointments, show_in_agenda",
+      )
       .eq("account_id", ctx.accountId)
       .order("created_at", { ascending: true });
 
@@ -65,6 +69,16 @@ export async function GET() {
           avatar_url: row.avatar_url,
           role: row.account_role,
           joined_at: row.created_at,
+          // Migration 047 — the agents' booking flag. Only surfaced
+          // to admins+ (same visibility rule as email); agents and
+          // viewers don't need it and it stays out of the payload.
+          can_book_appointments: canSeeEmails
+            ? (row.can_book_appointments ?? false)
+            : undefined,
+          // Migration 048 — agenda visibility. Public to every
+          // member: the agenda columns and specialist picker are
+          // built from it, no matter the caller's role.
+          show_in_agenda: row.show_in_agenda ?? true,
         },
       ];
     });
