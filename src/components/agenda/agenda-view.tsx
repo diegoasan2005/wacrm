@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Loader2,
   Plus,
+  Upload,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
@@ -67,6 +68,7 @@ import { cn } from "@/lib/utils";
 import { MemberDayColumns } from "./member-day-columns";
 import { ListView, MonthView, WeekView } from "./other-views";
 import { AppointmentDialog, type DialogPreset } from "./appointment-dialog";
+import { AppointmentImportModal } from "./appointment-import-modal";
 
 type ViewMode = "day" | "week" | "month" | "list";
 
@@ -79,6 +81,7 @@ export function AgendaView() {
     accountId,
     accountTimezone,
     canBookAppointments: canBook,
+    isOwner,
   } = useAuth();
   const timezone = accountTimezone || FALLBACK_TIMEZONE;
 
@@ -109,6 +112,7 @@ export function AgendaView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogAppointment, setDialogAppointment] = useState<Appointment | null>(null);
   const [dialogPreset, setDialogPreset] = useState<DialogPreset | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   // Bumped on every open so the dialog REMOUNTS with fresh state —
   // editing always shows the data of the appointment just clicked,
   // never leftovers from a previous open.
@@ -544,6 +548,20 @@ export function AgendaView() {
             </SelectContent>
           </Select>
 
+          {/* Import appointments — owner-only (bulk writes affect
+              the whole agenda; members import contacts instead). */}
+          {isOwner && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+              className="border-border text-muted-foreground hover:bg-muted"
+            >
+              <Upload className="size-4" />
+              {t("importButton")}
+            </Button>
+          )}
+
           {/* New appointment */}
           {canWrite && (
             <Button
@@ -612,6 +630,15 @@ export function AgendaView() {
           </div>
         )}
       </div>
+
+      <AppointmentImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        services={services}
+        members={members}
+        defaultSpecialistId={userId || ""}
+        onImported={fetchAppointments}
+      />
 
       <AppointmentDialog
         key={dialogKey}

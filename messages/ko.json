@@ -14,7 +14,8 @@
     "noAccount": "계정이 없으신가요?",
     "createAccount": "계정 만들기",
     "linkExpired": "링크가 만료되었습니다. 비밀번호를 재설정하려면 “비밀번호를 잊으셨나요?”에서 새 링크를 요청하세요. 이메일 인증 중이었다면 다시 가입해 주세요.",
-    "linkInvalid": "이 링크로는 로그인할 수 없습니다. 이메일 인증 중이었다면 이미 인증이 완료되었을 수 있으니 아래에서 로그인하세요. 비밀번호 재설정은 새 링크를 요청한 뒤 요청한 브라우저에서 열어 주세요."
+    "linkInvalid": "이 링크로는 로그인할 수 없습니다. 이메일 인증 중이었다면 이미 인증이 완료되었을 수 있으니 아래에서 로그인하세요. 비밀번호 재설정은 새 링크를 요청한 뒤 요청한 브라우저에서 열어 주세요.",
+    "contactAdmin": "계정 생성은 관리자에게 문의하세요."
   },
   "Sidebar": {
     "title": "WhatsApp용 CRM 템플릿",
@@ -571,7 +572,21 @@
       "toastError": "가져오기 실패",
       "notAuthenticated": "인증되지 않았습니다",
       "notLinkedToAccount": "프로필이 계정에 연결되어 있지 않습니다.",
-      "toastTagsSkippedMore": " (외 {count}개)"
+      "toastTagsSkippedMore": " (외 {count}개)",
+      "resultDuplicateIdentification": "{count}개 행 생략: 신분증 번호 중복",
+      "duplicateIdentificationHint": "해당 신분증 번호가 이 계정에 이미 존재하거나 파일 내 중복입니다 — 중복 정보는 등록되지 않습니다.",
+      "structureHeading": "파일 구조",
+      "structureIdentification": "identification *",
+      "structureName": "nombre *",
+      "structureLastName": "apellido *",
+      "structurePhone": "celular",
+      "structureBirthMonth": "cumpleanos_mes (1-12)",
+      "structureBirthDay": "cumpleanos_dia (1-31)",
+      "structureTags": "tags",
+      "structureHint": "첫 행은 나열된 그대로의 헤더여야 합니다(액센트 없음). identificación, nombre, apellido가 없는 행은 생략되며, 신분증 또는 전화번호 중복은 등록되지 않습니다.",
+      "resultMissingRequired": "{count}개 행 생략: identificación, nombre 또는 apellido 누락",
+      "missingRequiredHint": "이 세 필드는 아젠다의 고객 양식과 동일하며 각 행에 필수입니다.",
+      "toastMissingRequired": "{count}개 행에 필수 필드가 없습니다"
     },
     "customFields": {
       "title": "커스텀 필드",
@@ -1814,7 +1829,8 @@
       "fields": "필드 & 태그",
       "deals": "딜 & 통화",
       "members": "팀원",
-      "api": "API 키"
+      "api": "API 키",
+      "roles": "역할 및 접근"
     },
     "groups": {
       "account": "계정",
@@ -2055,6 +2071,34 @@
       "textPlaceholder": "삽입할 메시지 텍스트",
       "cancel": "취소",
       "save": "저장"
+    },
+    "rolesConfig": {
+      "title": "역할 및 접근",
+      "description": "각 역할이 볼 수 있는 내비게이션 옵션과 설정 섹션을 정하세요. 체크하지 않은 항목은 계속 표시됩니다.",
+      "ownerHint": "소유자는 항상 모든 옵션을 봅니다 — 이 설정은 관리자, 에이전트, 관찰자에게 적용됩니다.",
+      "roleLabel": "역할 설정",
+      "navGroup": "내비게이션 옵션 (숨김)",
+      "settingsGroup": "설정 섹션 (숨김)",
+      "hiddenHint": "체크됨 = 이 역할에게 숨김. 체크하지 않은 옵션은 계속 표시됩니다.",
+      "save": "저장",
+      "saveFailed": "표시 설정을 저장할 수 없습니다",
+      "savedToast": "표시 설정이 저장되었습니다",
+      "networkError": "연결 오류",
+      "navKeys": {
+        "dashboard": "패널",
+        "inbox": "수신함",
+        "notifications": "알림",
+        "contacts": "연락처",
+        "agenda": "일정",
+        "agendaHistorial": "일정 히스토리",
+        "services": "서비스",
+        "pipelines": "파이프라인",
+        "broadcasts": "브로드캐스트",
+        "automations": "자동화",
+        "flows": "플로우",
+        "aiAgents": "AI 에이전트",
+        "settings": "설정"
+      }
     }
   },
   "SignupPage": {
@@ -2601,7 +2645,9 @@
       "nameTooLong": "계정 이름은 {max}자 이하여야 합니다",
       "updateFailed": "계정을 업데이트하지 못했습니다",
       "transferFailed": "소유권을 이전하지 못했습니다",
-      "newOwnerInvalid": "newOwnerUserId는 유효한 UUID여야 합니다"
+      "newOwnerInvalid": "newOwnerUserId는 유효한 UUID여야 합니다",
+      "loadFailed": "계정을 불러올 수 없습니다",
+      "saveFailed": "저장할 수 없습니다"
     },
     "invitations": {
       "redeemFailed": "초대를 수락하지 못했습니다",
@@ -2975,7 +3021,32 @@
     "visibilityOwner": "소유자로서 모든 멤버의 일정을 볼 수 있고 누구에게나 예약을 등록할 수 있습니다.",
     "visibilityAdmin": "관리자로서 모든 멤버의 일정을 볼 수 있고 누구에게나 예약을 등록할 수 있습니다.",
     "visibilityAgent": "자신의 일정만 볼 수 있습니다. 소유자가 «예약 등록 가능»을 켜주면 자신의 예약을 만들고 편집할 수 있습니다.",
-    "visibilityViewer": "읽기 전용 보기: 모든 일정을 조회할 수 있지만 예약을 수정할 수는 없습니다."
+    "visibilityViewer": "읽기 전용 보기: 모든 일정을 조회할 수 있지만 예약을 수정할 수는 없습니다.",
+    "importButton": "예약 가져오기",
+    "importModal": {
+      "title": "예약 가져오기",
+      "description": "CSV를 업로드하면 각 행이 일정 규칙(용량, 근무 시간, 권한)으로 검증되어 예약으로 생성됩니다.",
+      "specialistLabel": "담당 전문가",
+      "specialistHint": "가져온 모든 예약이 이 멤버에게 배정됩니다.",
+      "fileLabel": "CSV 파일",
+      "columnsHint": "필수 열: identificacion, fecha (YYYY-MM-DD), hora (HH:MM), servicio (정확한 이름). 선택: duracion(분), notas.",
+      "noRows": "사용 가능한 행이 없습니다 (필수 열 확인)",
+      "missingColumns": "필수 열 누락: identificacion, fecha, hora, servicio",
+      "rowsDetected": "{count}개 행 감지됨",
+      "progress": "{total}개 중 {done}개 처리 중…",
+      "specialistRequired": "전문가를 선택하세요",
+      "contactNotFound": "신분증 {id}의 고객을 찾을 수 없습니다",
+      "serviceNotFoundRow": "서비스 \"{name}\"을(를) 찾을 수 없습니다",
+      "badDateTime": "날짜 또는 시간 형식이 잘못되었습니다",
+      "rowFailed": "예약을 생성할 수 없습니다",
+      "resultCreated": "{count}개 예약 생성됨",
+      "resultFailed": "{count}개 행 실패",
+      "failedRow": "{line}행 (ID {id})",
+      "importedToast": "{count}개 예약 가져옴",
+      "failedToast": "{count}개 행을 가져올 수 없습니다",
+      "close": "닫기",
+      "import": "가져오기"
+    }
   },
   "AgendaHistory": {
     "title": "일정 히스토리",

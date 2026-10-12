@@ -30,6 +30,10 @@ import {
   Zap,
 } from "lucide-react";
 import type { AccountRole } from "@/lib/auth/roles";
+import {
+  firstVisibleNavPath,
+  isNavVisible,
+} from "@/lib/auth/role-visibility";
 
 // Per-role chip metadata used in the sidebar's account strip + the
 // Members tab roster. Keeping this near both consumers in a single
@@ -122,7 +126,7 @@ import { useTranslations } from "next-intl";
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const t = useTranslations("Sidebar");
   const pathname = usePathname();
-  const { profile, profileLoading, account, accountRole, signOut } = useAuth();
+  const { profile, profileLoading, account, accountRole, signOut, roleNavConfig } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
   // Only surface the account-name strip when it actually carries
@@ -137,6 +141,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     !profileLoading &&
     !!account?.name &&
     account.name !== profile?.full_name;
+
+  // Migration 055 — fail closed: while the profile (and with it the
+  // role + visibility config) is still loading, NO nav options render.
+  // Showing everything first and filtering later would leak which
+  // options exist to roles that must not see them.
+  const navReady = !profileLoading;
 
   // Close the drawer when route changes — users opened it to navigate,
   // so once they pick a destination the drawer should get out of the way.
@@ -193,7 +203,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         {/* Logo row. On mobile we put a close button here; on desktop the
             close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link
+            href={firstVisibleNavPath(roleNavConfig, accountRole)}
+            className="flex items-center gap-2"
+          >
             {/* Brand icon (icono.ico) — replaces the old chat glyph. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -215,10 +228,24 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           </button>
         </div>
 
-        {/* Main navigation */}
+        {/* Main navigation — filtered by the owner's per-role
+            visibility config (migration 055); the owner sees all.
+            Fail closed while loading: skeleton bars, no options. */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="flex flex-col gap-1">
-            {navItems.map((item) => {
+            {!navReady
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <li
+                    key={i}
+                    className="h-9 animate-pulse rounded-lg bg-muted/70"
+                    aria-hidden
+                  />
+                ))
+              : navItems
+                  .filter((item) =>
+                    isNavVisible(roleNavConfig, accountRole, item.href.slice(1)),
+                  )
+                  .map((item) => {
               // Exact match, or a true segment boundary ("/agenda"
               // must NOT light up on "/agenda-historial").
               const isActive =
@@ -284,7 +311,12 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           <div className="my-4 border-t border-border" />
 
           <ul className="flex flex-col gap-1">
-            {bottomNavItems.map((item) => {
+            {navReady &&
+              bottomNavItems
+                .filter((item) =>
+                  isNavVisible(roleNavConfig, accountRole, item.href.slice(1)),
+                )
+                .map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
                 <li key={item.href}>

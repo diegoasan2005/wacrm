@@ -14,7 +14,8 @@
     "noAccount": "Não tem uma conta?",
     "createAccount": "Criar conta",
     "linkExpired": "Esse link expirou. Para redefinir a senha, use “Esqueceu a senha?” para pedir um novo; se estava confirmando seu e-mail, cadastre-se novamente.",
-    "linkInvalid": "Não foi possível entrar com esse link. Se estava confirmando seu e-mail, ele já pode estar verificado — basta entrar abaixo. Para redefinir a senha, peça um novo link e abra-o no mesmo navegador em que o solicitou."
+    "linkInvalid": "Não foi possível entrar com esse link. Se estava confirmando seu e-mail, ele já pode estar verificado — basta entrar abaixo. Para redefinir a senha, peça um novo link e abra-o no mesmo navegador em que o solicitou.",
+    "contactAdmin": "Para criar uma conta, entre em contato com o administrador."
   },
   "Sidebar": {
     "title": "Modelo de CRM para WhatsApp",
@@ -571,7 +572,21 @@
       "toastError": "Falha na importação",
       "notAuthenticated": "Não autenticado",
       "notLinkedToAccount": "Seu perfil não está vinculado a uma conta.",
-      "toastTagsSkippedMore": " (+{count} outros)"
+      "toastTagsSkippedMore": " (+{count} outros)",
+      "resultDuplicateIdentification": "{count} linha(s) ignorada(s): número de identificação duplicado",
+      "duplicateIdentificationHint": "A identificação já existe nesta conta ou está repetida no arquivo — informações duplicadas nunca são registradas.",
+      "structureHeading": "Estrutura esperada do arquivo",
+      "structureIdentification": "identification *",
+      "structureName": "nome *",
+      "structureLastName": "sobrenome *",
+      "structurePhone": "celular",
+      "structureBirthMonth": "cumpleanos_mes (1-12)",
+      "structureBirthDay": "cumpleanos_dia (1-31)",
+      "structureTags": "etiquetas",
+      "structureHint": "A primeira linha são os cabeçalhos exatamente como listados (sem acentos). Linhas sem identificação, nome ou sobrenome são ignoradas; duplicados por identificação ou celular nunca são registrados.",
+      "resultMissingRequired": "{count} linha(s) ignorada(s): falta identificação, nome ou sobrenome",
+      "missingRequiredHint": "Esses três campos correspondem ao formulário de cliente da agenda e são obrigatórios em cada linha.",
+      "toastMissingRequired": "{count} linha(s) sem campos obrigatórios"
     },
     "customFields": {
       "title": "Campos personalizados",
@@ -1814,7 +1829,8 @@
       "fields": "Campos e tags",
       "deals": "Negócios e moeda",
       "members": "Membros da equipe",
-      "api": "Chaves de API"
+      "api": "Chaves de API",
+      "roles": "Funções e acessos"
     },
     "groups": {
       "account": "Conta",
@@ -2055,6 +2071,34 @@
       "textPlaceholder": "O texto da mensagem a inserir",
       "cancel": "Cancelar",
       "save": "Salvar"
+    },
+    "rolesConfig": {
+      "title": "Funções e acessos",
+      "description": "Defina quais opções de navegação e seções de configuração cada função pode ver. O que ficar desmarcado permanece visível.",
+      "ownerHint": "O proprietário sempre vê todas as opções — esta configuração se aplica a administradores, agentes e observadores.",
+      "roleLabel": "Configurar função",
+      "navGroup": "Opções do menu (ocultas)",
+      "settingsGroup": "Seções de configuração (ocultas)",
+      "hiddenHint": "MARCADO = oculto para esta função. As opções desmarcadas continuam visíveis.",
+      "save": "Salvar",
+      "saveFailed": "Não foi possível salvar a configuração de visibilidade",
+      "savedToast": "Configuração de visibilidade salva",
+      "networkError": "Erro de conexão",
+      "navKeys": {
+        "dashboard": "Painel",
+        "inbox": "Caixa de entrada",
+        "notifications": "Notificações",
+        "contacts": "Contatos",
+        "agenda": "Agenda",
+        "agendaHistorial": "Agenda Histórico",
+        "services": "Serviços",
+        "pipelines": "Pipelines",
+        "broadcasts": "Transmissões",
+        "automations": "Automações",
+        "flows": "Fluxos",
+        "aiAgents": "Agentes de IA",
+        "settings": "Configuração"
+      }
     }
   },
   "SignupPage": {
@@ -2601,7 +2645,9 @@
       "nameTooLong": "O nome da conta deve ter no máximo {max} caracteres",
       "updateFailed": "Falha ao atualizar a conta",
       "transferFailed": "Falha ao transferir a propriedade",
-      "newOwnerInvalid": "newOwnerUserId deve ser um UUID válido"
+      "newOwnerInvalid": "newOwnerUserId deve ser um UUID válido",
+      "loadFailed": "Não foi possível carregar a conta",
+      "saveFailed": "Não foi possível salvar"
     },
     "invitations": {
       "redeemFailed": "Falha ao aceitar o convite",
@@ -2975,7 +3021,32 @@
     "visibilityOwner": "Como proprietário você vê a agenda de todos os membros e pode agendar para qualquer um deles.",
     "visibilityAdmin": "Como administrador você vê a agenda de todos os membros e pode agendar para qualquer um deles.",
     "visibilityAgent": "Você vê apenas a sua própria agenda. Se o proprietário ativar «Pode registrar agendamentos» para você, poderá criar e editar os seus próprios agendamentos.",
-    "visibilityViewer": "Visualização somente leitura: você pode consultar todas as agendas, mas não modificar agendamentos."
+    "visibilityViewer": "Visualização somente leitura: você pode consultar todas as agendas, mas não modificar agendamentos.",
+    "importButton": "Importar agendamentos",
+    "importModal": {
+      "title": "Importar agendamentos",
+      "description": "Envie um CSV e cada linha se torna um agendamento, validado com as mesmas regras da agenda (capacidade, horário, permissões).",
+      "specialistLabel": "Especialista atende",
+      "specialistHint": "Todos os agendamentos importados serão atribuídos a este membro.",
+      "fileLabel": "Arquivo CSV",
+      "columnsHint": "Colunas obrigatórias: identificacion, fecha (AAAA-MM-DD), hora (HH:MM), servicio (nome exato). Opcionais: duracion (minutos), notas.",
+      "noRows": "Nenhuma linha utilizável encontrada (verifique as colunas obrigatórias)",
+      "missingColumns": "Faltam colunas obrigatórias: identificacion, fecha, hora, servicio",
+      "rowsDetected": "{count} linha(s) detectada(s)",
+      "progress": "Processando {done} de {total}…",
+      "specialistRequired": "Selecione o especialista",
+      "contactNotFound": "Contato com identificação {id} não encontrado",
+      "serviceNotFoundRow": "Serviço \"{name}\" não encontrado",
+      "badDateTime": "Formato de data ou hora inválido",
+      "rowFailed": "Não foi possível criar o agendamento",
+      "resultCreated": "{count} agendamento(s) criado(s)",
+      "resultFailed": "{count} linha(s) com erro",
+      "failedRow": "Linha {line} (ID {id})",
+      "importedToast": "{count} agendamento(s) importado(s)",
+      "failedToast": "Não foi possível importar {count} linha(s)",
+      "close": "Fechar",
+      "import": "Importar"
+    }
   },
   "AgendaHistory": {
     "title": "Agenda Histórico",

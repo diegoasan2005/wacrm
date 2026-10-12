@@ -6,6 +6,7 @@ import {
   Palette,
   PlugZap,
   Shield,
+  ShieldCheck,
   Tags,
   User,
   UsersRound,
@@ -33,6 +34,7 @@ export const SETTINGS_SECTIONS = [
   'deals',
   'members',
   'api',
+  'roles',
 ] as const;
 
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
@@ -59,6 +61,9 @@ export const SECTION_META: Record<SettingsSection, SectionMeta> = {
   deals: { id: 'deals', label: 'Deals & currency', icon: Coins, group: 'workspace' },
   members: { id: 'members', label: 'Team members', icon: UsersRound, group: 'workspace' },
   api: { id: 'api', label: 'API keys', icon: KeyRound, group: 'workspace' },
+  // Owner-only: per-role option visibility (migration 055). The
+  // settings page hides this rail entry for non-owners.
+  roles: { id: 'roles', label: 'Roles & access', icon: ShieldCheck, group: 'workspace' },
 };
 
 export const RAIL_GROUPS: { label: string | null; group: SectionMeta['group'] }[] = [

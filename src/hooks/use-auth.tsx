@@ -21,6 +21,10 @@ import {
   isAccountRole,
   type AccountRole,
 } from "@/lib/auth/roles";
+import {
+  parseRoleVisibilityConfig,
+  type RoleVisibilityConfig,
+} from "@/lib/auth/role-visibility";
 
 interface Profile {
   id: string;
@@ -52,6 +56,9 @@ interface AccountSummary {
   /** IANA timezone for agenda display + scheduling rules
    *  (migration 047). Falls back to Bogotá on older schemas. */
   timezone: string;
+  /** Owner-controlled per-role visibility config (migration 055).
+   *  Raw JSONB from the DB — parse with parseRoleVisibilityConfig. */
+  role_nav_config: unknown;
 }
 
 /**
@@ -131,6 +138,9 @@ interface AuthContextValue {
   /** IANA timezone of the account (agenda display + scheduling).
    *  Falls back to 'America/Bogota'. */
   accountTimezone: string;
+  /** Parsed per-role visibility config (migration 055) — feeds the
+   *  sidebar and settings rail filters. */
+  roleNavConfig: RoleVisibilityConfig;
   /** "Puede registrar citas" — resolved from the role AND the
    *  per-membership flag: admin+ always true, agents per flag,
    *  viewers always false. */
@@ -260,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // default_currency added in migration 021, timezone in 047;
             // both narrowed to their fallbacks below for older schemas
             // where they read null.
-            .select("id, name, default_currency, timezone")
+            .select("id, name, default_currency, timezone, role_nav_config")
             .eq("id", data.account_id)
             .maybeSingle();
           if (accountErr) {
@@ -276,6 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               name: account.name,
               default_currency: account.default_currency ?? DEFAULT_CURRENCY,
               timezone: account.timezone ?? "America/Bogota",
+              role_nav_config: account.role_nav_config,
             };
           }
         }
@@ -469,6 +480,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         account,
         defaultCurrency: account?.default_currency ?? DEFAULT_CURRENCY,
         accountTimezone: account?.timezone ?? "America/Bogota",
+        roleNavConfig: parseRoleVisibilityConfig(account?.role_nav_config),
         accountStatus,
         accountStatusDetail: statusDetail,
         ...derived,
@@ -503,6 +515,7 @@ export function useAuth(): AuthContextValue {
       account: null,
       defaultCurrency: DEFAULT_CURRENCY,
       accountTimezone: "America/Bogota",
+      roleNavConfig: {},
       // Outside the provider there is nothing to resolve yet — 'loading'
       // keeps the access alert from firing on, say, the login page.
       accountStatus: "loading",

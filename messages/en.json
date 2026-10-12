@@ -14,7 +14,8 @@
     "noAccount": "Don't have an account?",
     "createAccount": "Create account",
     "linkExpired": "That link has expired. For a password reset, use “Forgot password?” to request a new one; if you were confirming your email, sign up again.",
-    "linkInvalid": "That link couldn’t be used to sign you in. If you were confirming your email, it may already be verified — just sign in below. For a password reset, request a new link and open it in the same browser you requested it from."
+    "linkInvalid": "That link couldn’t be used to sign you in. If you were confirming your email, it may already be verified — just sign in below. For a password reset, request a new link and open it in the same browser you requested it from.",
+    "contactAdmin": "To create an account, please contact the administrator."
   },
   "Sidebar": {
     "title": "CRM Template for WhatsApp",
@@ -571,7 +572,21 @@
       "toastError": "Import failed",
       "notAuthenticated": "Not authenticated",
       "notLinkedToAccount": "Your profile is not linked to an account.",
-      "toastTagsSkippedMore": " (+{count} more)"
+      "toastTagsSkippedMore": " (+{count} more)",
+      "resultDuplicateIdentification": "{count} row(s) skipped: duplicate ID number",
+      "duplicateIdentificationHint": "The ID number already exists in this account or is repeated in the file — duplicates are never registered.",
+      "structureHeading": "Expected file structure",
+      "structureIdentification": "identification *",
+      "structureName": "nombre *",
+      "structureLastName": "apellido *",
+      "structurePhone": "celular",
+      "structureBirthMonth": "cumpleanos_mes (1-12)",
+      "structureBirthDay": "cumpleanos_dia (1-31)",
+      "structureTags": "tags",
+      "structureHint": "First row = headers exactly as listed (accent-less). Rows missing identification, nombre or apellido are skipped; duplicates by identification or phone are never registered.",
+      "resultMissingRequired": "{count} row(s) skipped: missing identification, nombre or apellido",
+      "missingRequiredHint": "These three fields mirror the agenda's client form and are required in every row.",
+      "toastMissingRequired": "{count} row(s) missing required fields"
     },
     "customFields": {
       "title": "Custom fields",
@@ -1814,7 +1829,8 @@
       "fields": "Fields & tags",
       "deals": "Deals & currency",
       "members": "Team members",
-      "api": "API keys"
+      "api": "API keys",
+      "roles": "Roles & access"
     },
     "groups": {
       "account": "Account",
@@ -2055,6 +2071,34 @@
       "textPlaceholder": "The message text to insert",
       "cancel": "Cancel",
       "save": "Save"
+    },
+    "rolesConfig": {
+      "title": "Roles & access",
+      "description": "Choose which navigation options and settings sections each role can see. Anything left unchecked stays visible.",
+      "ownerHint": "The owner always sees every option — this configuration applies to admins, agents and viewers.",
+      "roleLabel": "Configure role",
+      "navGroup": "Navigation options (hidden)",
+      "settingsGroup": "Settings sections (hidden)",
+      "hiddenHint": "CHECKED = hidden for this role. Unchecked options stay visible.",
+      "save": "Save",
+      "saveFailed": "Could not save the visibility configuration",
+      "savedToast": "Visibility configuration saved",
+      "networkError": "Connection error",
+      "navKeys": {
+        "dashboard": "Panel",
+        "inbox": "Inbox",
+        "notifications": "Notifications",
+        "contacts": "Contacts",
+        "agenda": "Agenda",
+        "agendaHistorial": "Agenda History",
+        "services": "Services",
+        "pipelines": "Pipelines",
+        "broadcasts": "Broadcasts",
+        "automations": "Automations",
+        "flows": "Flows",
+        "aiAgents": "AI Agents",
+        "settings": "Settings"
+      }
     }
   },
   "SignupPage": {
@@ -2601,7 +2645,9 @@
       "nameTooLong": "Account name must be {max} characters or fewer",
       "updateFailed": "Failed to update account",
       "transferFailed": "Failed to transfer ownership",
-      "newOwnerInvalid": "'newOwnerUserId' must be a valid UUID"
+      "newOwnerInvalid": "'newOwnerUserId' must be a valid UUID",
+      "loadFailed": "Could not load the account",
+      "saveFailed": "Could not save"
     },
     "invitations": {
       "redeemFailed": "Failed to redeem invitation",
@@ -2975,7 +3021,32 @@
     "visibilityOwner": "As owner you see every member's agenda and can book appointments for any of them.",
     "visibilityAdmin": "As admin you see every member's agenda and can book appointments for any of them.",
     "visibilityAgent": "You see only your own agenda. If the owner enables \"Can book appointments\" for you, you'll be able to create and edit your own appointments.",
-    "visibilityViewer": "Read-only view: you can consult every agenda but cannot modify appointments."
+    "visibilityViewer": "Read-only view: you can consult every agenda but cannot modify appointments.",
+    "importButton": "Import appointments",
+    "importModal": {
+      "title": "Import appointments",
+      "description": "Upload a CSV and each row becomes an appointment, validated with the same rules as the agenda (capacity, schedule, permissions).",
+      "specialistLabel": "Specialist attending",
+      "specialistHint": "All imported appointments will be assigned to this member.",
+      "fileLabel": "CSV file",
+      "columnsHint": "Required columns: identificacion, fecha (YYYY-MM-DD), hora (HH:MM), servicio (exact name). Optional: duracion (minutes), notas.",
+      "noRows": "No usable rows found (check the required columns)",
+      "missingColumns": "Missing required columns: identificacion, fecha, hora, servicio",
+      "rowsDetected": "{count} row(s) detected",
+      "progress": "Processing {done} of {total}…",
+      "specialistRequired": "Select the specialist",
+      "contactNotFound": "Contact with ID {id} not found",
+      "serviceNotFoundRow": "Service \"{name}\" not found",
+      "badDateTime": "Invalid date or time format",
+      "rowFailed": "The appointment could not be created",
+      "resultCreated": "{count} appointment(s) created",
+      "resultFailed": "{count} row(s) failed",
+      "failedRow": "Line {line} (ID {id})",
+      "importedToast": "{count} appointment(s) imported",
+      "failedToast": "{count} row(s) could not be imported",
+      "close": "Close",
+      "import": "Import"
+    }
   },
   "AgendaHistory": {
     "title": "Agenda History",

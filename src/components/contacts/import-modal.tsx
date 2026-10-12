@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import {
-  dedupeByPhone,
   isUniqueViolation,
   normalizeKey,
 } from '@/lib/contacts/dedupe';
@@ -142,7 +141,9 @@ export function ImportModal({
   const [result, setResult] = useState<{
     imported: number;
     skipped: number;
-    invalidPhone: number;
+    missingRequired: number;
+    duplicateIdentification: number;
+    duplicatePhone: number;
     failed: number;
     failedDetails: { phone: string; name?: string; reason: string }[];
     tagsAssigned: number;
@@ -171,14 +172,14 @@ export function ImportModal({
     setResult(null);
 
     const text = await selected.text();
-    const {
-      rows,
-      hasTagsColumn: csvHasTags,
-      hasCompanyColumn: csvHasCompany,
-    } = parseContactCsv(text);
+    const parsed = parseContactCsv(text);
 
-    if (rows.length === 0) {
-      toast.error(t('toastNoValidRows'));
+    if (parsed.rows.length === 0) {
+      toast.error(
+        parsed.hasIdentificationColumn
+          ? t('toastNoValidRows')
+          : t('missingColumns')
+      );
       setParsedRows([]);
       setHasTagsColumn(false);
       setHasCompanyColumn(false);
@@ -186,11 +187,11 @@ export function ImportModal({
       return;
     }
 
-    setParsedRows(rows);
-    setHasTagsColumn(csvHasTags);
-    setHasCompanyColumn(csvHasCompany);
+    setParsedRows(parsed.rows);
+    setHasTagsColumn(parsed.hasTagsColumn);
+    setHasCompanyColumn(parsed.hasCompanyColumn);
 
-    if (csvHasTags && accountId) {
+    if (parsed.hasTagsColumn && accountId) {
       const { data: tags } = await supabase
         .from('tags')
         .select('name, color')
@@ -222,38 +223,99 @@ export function ImportModal({
 
       let imported = 0;
       let skipped = 0;
+      let duplicateIdentification = 0;
+      let duplicatePhone = 0;
+      let missingRequired = 0;
       let failed = 0;
       const failedDetails: { phone: string; name?: string; reason: string }[] =
         [];
 
-      // 1) De-dupe within the file by normalized phone (keep first).
-      //    Rows with no usable phone at all are counted separately —
-      //    they never duplicated anything, so lumping them into
-      //    `skipped` would misreport them as dupes (see dedupeByPhone).
-      const {
-        unique,
-        duplicates: inFileDupes,
-        invalid: invalidPhone,
-      } = dedupeByPhone(parsedRows);
-      skipped += inFileDupes;
+      // 1) Required fields — mirrors the agenda's "Información del
+      //    Cliente": Identificación*, Nombre*, Apellido*. Celular is
+      //    optional, so rows without it are perfectly valid now.
+      const validRows: ParsedContactRow[] = [];
+      for (const row of parsedRows) {
+        if (
+          !row.identification?.trim() ||
+          !row.name?.trim() ||
+          !row.lastName?.trim()
+        ) {
+          missingRequired++;
+          continue;
+        }
+        validRows.push(row);
+      }
+      skipped += missingRequired;
 
-      // 2) Skip numbers already in this account. One read of the
-      //    generated `phone_normalized` column (migration 022) → Set.
-      const { data: existingRows } = await supabase
+      // 2) Identification uniqueness (requirement: no duplicate ID
+      //     numbers may be registered). Two passes: duplicated IDs
+      //     WITHIN the file (keep first), then IDs already stored in
+      //     this account. An existing match skips the row — the
+      //     contact is already registered.
+      const seenIds = new Set<string>();
+      const idDupesInFile: ParsedContactRow[] = [];
+      const afterIdFileDedupe = validRows.filter((row) => {
+        const id = row.identification!.trim();
+        const key = id.toLowerCase();
+        if (seenIds.has(key)) {
+          idDupesInFile.push(row);
+          return false;
+        }
+        seenIds.add(key);
+        return true;
+      });
+      skipped += idDupesInFile.length;
+      duplicateIdentification += idDupesInFile.length;
+
+      const { data: existingIdRows } = await supabase
+        .from('contacts')
+        .select('identification')
+        .eq('account_id', accountId);
+      const existingIds = new Set(
+        (existingIdRows ?? [])
+          .map((r) => (r as { identification: string | null }).identification)
+          .filter((p): p is string => !!p)
+          .map((p) => p.toLowerCase())
+      );
+
+      let toInsert = afterIdFileDedupe.filter((row) => {
+        const id = row.identification!.trim();
+        if (existingIds.has(id.toLowerCase())) {
+          skipped++;
+          duplicateIdentification++;
+          return false;
+        }
+        return true;
+      });
+
+      // 2b) Phone dedupe among the remaining rows (celular is
+      //     optional, but when present it must not collide either).
+      const seenPhones = new Set<string>();
+      toInsert = toInsert.filter((row) => {
+        const key = row.phone ? normalizeKey(row.phone) : '';
+        if (!key) return true;
+        if (seenPhones.has(key)) {
+          duplicatePhone++;
+          skipped++;
+          return false;
+        }
+        seenPhones.add(key);
+        return true;
+      });
+      const { data: existingPhoneRows } = await supabase
         .from('contacts')
         .select('phone_normalized')
         .eq('account_id', accountId);
-      const existing = new Set(
-        (existingRows ?? [])
-          .map(
-            (r) => (r as { phone_normalized: string | null }).phone_normalized
-          )
+      const existingPhones = new Set(
+        (existingPhoneRows ?? [])
+          .map((r) => (r as { phone_normalized: string | null }).phone_normalized)
           .filter((p): p is string => !!p)
       );
-
-      const toInsert = unique.filter((row) => {
-        if (existing.has(normalizeKey(row.phone))) {
+      toInsert = toInsert.filter((row) => {
+        const key = row.phone ? normalizeKey(row.phone) : '';
+        if (key && existingPhones.has(key)) {
           skipped++;
+          duplicatePhone++;
           return false;
         }
         return true;
@@ -287,8 +349,12 @@ export function ImportModal({
           account_id: accountId,
           phone: row.phone,
           name: row.name || null,
+          last_name: row.lastName || null,
           email: row.email || null,
           company: row.company || null,
+          identification: row.identification?.trim() || null,
+          birth_month: row.birthMonth ?? null,
+          birth_day: row.birthDay ?? null,
         }));
 
         const { data, error } = await supabase
@@ -371,7 +437,9 @@ export function ImportModal({
       setResult({
         imported,
         skipped,
-        invalidPhone,
+        missingRequired,
+        duplicateIdentification,
+        duplicatePhone,
         failed,
         failedDetails,
         tagsAssigned,
@@ -392,8 +460,8 @@ export function ImportModal({
       if (skipped > 0) {
         toast.info(t('toastSkipped', { count: skipped }));
       }
-      if (invalidPhone > 0) {
-        toast.warning(t('toastInvalidPhone', { count: invalidPhone }));
+      if (missingRequired > 0) {
+        toast.warning(t('toastMissingRequired', { count: missingRequired }));
       }
       if (failed > 0) {
         toast.error(t('toastFailed', { count: failed }));
@@ -500,6 +568,32 @@ export function ImportModal({
             onChange={handleFileChange}
             className="hidden"
           />
+        </div>
+
+        {/* Expected file structure — mirrors the agenda's
+            "Información del Cliente" block (migration 047). */}
+        <div className="rounded-lg border border-border bg-muted/40 p-3">
+          <p className="text-xs font-semibold tracking-[0.09em] text-muted-foreground uppercase">
+            {t('structureHeading')}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {t('structureIdentification')}
+            </span>
+            <span className="font-medium text-foreground">
+              {t('structureName')}
+            </span>
+            <span className="font-medium text-foreground">
+              {t('structureLastName')}
+            </span>
+            <span>{t('structurePhone')}</span>
+            <span>{t('structureBirthMonth')}</span>
+            <span>{t('structureBirthDay')}</span>
+            <span>{t('structureTags')}</span>
+          </div>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            {t('structureHint')}
+          </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
@@ -623,14 +717,27 @@ export function ImportModal({
                     {t('resultSkipped', { count: result.skipped })}
                   </div>
                 )}
-                {result.invalidPhone > 0 && (
+                {result.missingRequired > 0 && (
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-1.5 text-sm text-amber-400">
                       <AlertTriangle className="size-4 shrink-0" />
-                      {t('resultInvalidPhone', { count: result.invalidPhone })}
+                      {t('resultMissingRequired', { count: result.missingRequired })}
                     </div>
                     <p className="pl-[1.375rem] text-xs text-muted-foreground">
-                      {t('invalidPhoneHint')}
+                      {t('missingRequiredHint')}
+                    </p>
+                  </div>
+                )}
+                {result.duplicateIdentification > 0 && (
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-1.5 text-sm text-amber-400">
+                      <AlertTriangle className="size-4 shrink-0" />
+                      {t('resultDuplicateIdentification', {
+                        count: result.duplicateIdentification,
+                      })}
+                    </div>
+                    <p className="pl-[1.375rem] text-xs text-muted-foreground">
+                      {t('duplicateIdentificationHint')}
                     </p>
                   </div>
                 )}

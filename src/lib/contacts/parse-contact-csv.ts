@@ -1,13 +1,26 @@
 /**
- * CSV parsing for the contacts import modal. Shared + unit-tested so
- * tag-column handling stays aligned with phone/name/email/company.
+ * CSV parsing for the contacts import modal. Shared + unit-tested.
+ *
+ * Columns mirror the agenda's "Información del Cliente" block
+ * (migration 047 extensions):
+ *   identificacion* · nombre* · apellido* · celular ·
+ *   cumpleanos_mes · cumpleanos_dia   (+ legacy email/company/tags)
+ * English aliases accepted for every header.
  */
 
 export interface ParsedContactRow {
+  /** Celular — optional in the agenda modal. */
   phone: string;
+  /** Nombre — required. */
   name?: string;
+  /** Apellido — required. */
+  lastName?: string;
+  /** Identificación — required + the dedup key. */
+  identification?: string;
   email?: string;
   company?: string;
+  birthMonth?: number;
+  birthDay?: number;
   /** Tag names from the optional `tags` column (comma/semicolon separated). */
   tagNames: string[];
 }
@@ -33,48 +46,66 @@ export function parseTagCell(value: string | undefined): string[] {
 
 export interface ParseContactCsvResult {
   rows: ParsedContactRow[];
-  /**
-   * True when the CSV header includes the required `phone` column.
-   * `rows` is empty both when the column is missing and when the file
-   * simply has no usable data rows; callers that need to tell those
-   * apart (to pick the right error message) read this flag.
-   */
+  /** Derived: the `phone`/`celular` column is present (broadcasts
+   *  still require it; the contact import treats it as optional). */
   hasPhoneColumn: boolean;
-  /** True when the CSV header includes a `tags` column. */
+  hasIdentificationColumn: boolean;
+  hasNameColumn: boolean;
+  hasLastNameColumn: boolean;
   hasTagsColumn: boolean;
-  /** True when the CSV header includes a `company` column. */
   hasCompanyColumn: boolean;
 }
 
+/** All accepted header aliases per logical column. */
+const COLUMN_ALIASES: Record<string, string[]> = {
+  identification: ['identification', 'identificacion'],
+  name: ['name', 'nombre'],
+  lastName: ['lastname', 'last_name', 'apellido'],
+  phone: ['phone', 'celular'],
+  birthMonth: ['birth_month', 'birthmonth', 'cumpleanos_mes', 'cumpleanosmes', 'mes'],
+  birthDay: ['birth_day', 'birthday', 'cumpleanos_dia', 'cumpleanosdia', 'dia'],
+  email: ['email', 'correo'],
+  company: ['company', 'empresa'],
+  tags: ['tags', 'etiquetas'],
+};
+
 export function parseContactCsv(text: string): ParseContactCsvResult {
+  const empty: ParseContactCsvResult = {
+    rows: [],
+    hasPhoneColumn: false,
+    hasIdentificationColumn: false,
+    hasNameColumn: false,
+    hasLastNameColumn: false,
+    hasTagsColumn: false,
+    hasCompanyColumn: false,
+  };
+
   const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) {
-    return {
-      rows: [],
-      hasPhoneColumn: false,
-      hasTagsColumn: false,
-      hasCompanyColumn: false,
-    };
-  }
+  if (lines.length < 2) return empty;
 
   const headers = lines[0]
     .split(',')
     .map((h) => h.trim().toLowerCase().replace(/["']/g, ''));
 
-  const phoneIdx = headers.indexOf('phone');
-  if (phoneIdx === -1) {
-    return {
-      rows: [],
-      hasPhoneColumn: false,
-      hasTagsColumn: false,
-      hasCompanyColumn: false,
-    };
-  }
+  const find = (logical: string) => {
+    const aliases = COLUMN_ALIASES[logical];
+    return headers.findIndex((h) => aliases.includes(h));
+  };
 
-  const nameIdx = headers.indexOf('name');
-  const emailIdx = headers.indexOf('email');
-  const companyIdx = headers.indexOf('company');
-  const tagsIdx = headers.indexOf('tags');
+  const identificationIdx = find('identification');
+  const nameIdx = find('name');
+  const lastNameIdx = find('lastName');
+  const phoneIdx = find('phone');
+  const birthMonthIdx = find('birthMonth');
+  const birthDayIdx = find('birthDay');
+  const emailIdx = find('email');
+  const companyIdx = find('company');
+  const tagsIdx = find('tags');
+
+  // NOTE: missing agenda-required columns (identificacion/nombre/
+  // apellido) do NOT bail out here — the broadcast importer only
+  // needs `phone`. The contact-import modal validates the required
+  // trio against the parsed rows instead.
 
   const rows: ParsedContactRow[] = [];
 
@@ -83,36 +114,39 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
     if (!line) continue;
 
     const values = parseCsvLine(line);
-    // A row with no usable phone is pushed through rather than dropped
-    // here — dedupeByPhone (shared with the webhook/manual-form paths)
-    // already treats an empty normalized key as invalid, and counting
-    // it there means the import result can tell the user "N contacts
-    // had no phone" instead of the row just vanishing with the total
-    // row count silently short of what's actually in the file.
-    const phone = values[phoneIdx]?.replace(/["']/g, '').trim() ?? '';
+    const cell = (idx: number) =>
+      idx >= 0 ? values[idx]?.replace(/["']/g, '').trim() || undefined : undefined;
+
+    const birthMonthRaw = cell(birthMonthIdx);
+    const birthDayRaw = cell(birthDayIdx);
+    const birthMonth = birthMonthRaw ? Number(birthMonthRaw) : undefined;
+    const birthDay = birthDayRaw ? Number(birthDayRaw) : undefined;
 
     rows.push({
-      phone,
-      name:
-        nameIdx >= 0
-          ? values[nameIdx]?.replace(/["']/g, '').trim() || undefined
+      phone: cell(phoneIdx) ?? '',
+      name: cell(nameIdx),
+      lastName: cell(lastNameIdx),
+      identification: cell(identificationIdx),
+      email: cell(emailIdx),
+      company: cell(companyIdx),
+      birthMonth:
+        birthMonth && Number.isInteger(birthMonth) && birthMonth >= 1 && birthMonth <= 12
+          ? birthMonth
           : undefined,
-      email:
-        emailIdx >= 0
-          ? values[emailIdx]?.replace(/["']/g, '').trim() || undefined
+      birthDay:
+        birthDay && Number.isInteger(birthDay) && birthDay >= 1 && birthDay <= 31
+          ? birthDay
           : undefined,
-      company:
-        companyIdx >= 0
-          ? values[companyIdx]?.replace(/["']/g, '').trim() || undefined
-          : undefined,
-      tagNames:
-        tagsIdx >= 0 ? parseTagCell(values[tagsIdx]?.replace(/["']/g, '')) : [],
+      tagNames: tagsIdx >= 0 ? parseTagCell(cell(tagsIdx)) : [],
     });
   }
 
   return {
     rows,
-    hasPhoneColumn: true,
+    hasPhoneColumn: phoneIdx !== -1,
+    hasIdentificationColumn: identificationIdx !== -1,
+    hasNameColumn: nameIdx !== -1,
+    hasLastNameColumn: lastNameIdx !== -1,
     hasTagsColumn: tagsIdx >= 0,
     hasCompanyColumn: companyIdx >= 0,
   };

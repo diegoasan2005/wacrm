@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 import { SECTION_META, type SettingsSection } from './settings-sections';
+import { isSettingsVisible } from '@/lib/auth/role-visibility';
 import { SettingsChip, StatusDot } from './settings-chip';
 import { ROLE_META } from './role-meta';
 
@@ -36,7 +37,7 @@ export function SettingsOverview({
 }: {
   onSelect: (section: SettingsSection) => void;
 }) {
-  const { user, profile, accountId, accountRole, defaultCurrency, canManageMembers } =
+  const { user, profile, accountId, accountRole, defaultCurrency, canManageMembers, roleNavConfig, accountStatus } =
     useAuth();
   const { mode, theme } = useTheme();
   const t = useTranslations('Settings.overview');
@@ -153,7 +154,7 @@ export function SettingsOverview({
 
   // Per-tile loading + subtitle. `null` counts render as a graceful
   // fallback so a single failed query never blanks a tile.
-  const tiles: {
+  const allTiles: {
     section: SettingsSection;
     loading: boolean;
     subtitle: ReactNode;
@@ -219,6 +220,15 @@ export function SettingsOverview({
     },
   ];
 
+  const tiles = (
+    // Fail closed (migration 055): until the account resolves, no
+    // tiles render — the flash of "everything visible" leaked which
+    // sections exist to roles that must not see them.
+    accountStatus === 'ready' ? allTiles : []
+  ).filter((tile) =>
+    isSettingsVisible(roleNavConfig, accountRole, tile.section),
+  );
+
   return (
     <section className="animate-in fade-in-50 duration-200">
       {/* Identity */}
@@ -249,9 +259,17 @@ export function SettingsOverview({
         ) : null}
       </Card>
 
-      {/* Status tiles */}
+      {/* Status tiles — skeleton until the visibility config lands */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {tiles.map(({ section, loading, subtitle }) => {
+        {tiles.length === 0 && accountStatus !== 'ready'
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[4.5rem] animate-pulse rounded-xl border border-border bg-card"
+                aria-hidden
+              />
+            ))
+          : tiles.map(({ section, loading, subtitle }) => {
           const meta = SECTION_META[section];
           const Icon = meta.icon;
           return (

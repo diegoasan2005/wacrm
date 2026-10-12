@@ -19,7 +19,10 @@ export async function fetchAccountMembers(): Promise<AccountMember[]> {
   }
 }
 
-/** Display label for a member: full name → email → raw id. */
-export function memberLabel(m: AccountMember): string {
+/** Display label for a member: full name → email → raw id.
+ *  Undefined-safe: callers may resolve from rosters that are still
+ *  loading (or that filtered to empty). */
+export function memberLabel(m?: AccountMember): string {
+  if (!m) return "";
   return m.full_name || m.email || m.user_id;
 }

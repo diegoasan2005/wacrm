@@ -32,21 +32,32 @@ describe('parseContactCsv', () => {
 
     expect(parseContactCsv(csv)).toEqual({
       hasPhoneColumn: true,
+      hasIdentificationColumn: false,
+      hasNameColumn: true,
+      hasLastNameColumn: false,
       hasTagsColumn: true,
       hasCompanyColumn: false,
       rows: [
         {
           phone: '+15551234567',
           name: 'Alice',
+          lastName: undefined,
+          identification: undefined,
           email: undefined,
           company: undefined,
+          birthMonth: undefined,
+          birthDay: undefined,
           tagNames: ['VIP', 'Lead'],
         },
         {
           phone: '+15559876543',
           name: 'Bob',
+          lastName: undefined,
+          identification: undefined,
           email: undefined,
           company: undefined,
+          birthMonth: undefined,
+          birthDay: undefined,
           tagNames: ['Customer'],
         },
       ],
@@ -63,8 +74,12 @@ describe('parseContactCsv', () => {
     expect(rows[1]).toEqual({
       phone: '',
       name: 'Bob',
+      lastName: undefined,
+      identification: undefined,
       email: undefined,
       company: undefined,
+      birthMonth: undefined,
+      birthDay: undefined,
       tagNames: [],
     });
   });
@@ -75,17 +90,42 @@ describe('parseContactCsv', () => {
 
     expect(parseContactCsv(csv)).toEqual({
       hasPhoneColumn: true,
+      hasIdentificationColumn: false,
+      hasNameColumn: true,
+      hasLastNameColumn: false,
       hasTagsColumn: false,
       hasCompanyColumn: false,
       rows: [
         {
           phone: '+15551234567',
           name: 'Alice',
+          lastName: undefined,
+          identification: undefined,
           email: undefined,
           company: undefined,
+          birthMonth: undefined,
+          birthDay: undefined,
           tagNames: [],
         },
       ],
+    });
+  });
+
+  it('parses the agenda client structure (identification, apellido, birthday)', () => {
+    const csv = `identificacion,nombre,apellido,celular,cumpleanos_mes,cumpleanos_dia
+1087985209,Angela,Rivera,3146775888,10,4`;
+
+    const { rows } = parseContactCsv(csv);
+    expect(rows[0]).toEqual({
+      phone: '3146775888',
+      name: 'Angela',
+      lastName: 'Rivera',
+      identification: '1087985209',
+      email: undefined,
+      company: undefined,
+      birthMonth: 10,
+      birthDay: 4,
+      tagNames: [],
     });
   });
 });

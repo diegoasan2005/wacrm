@@ -1,8 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
+import {
+  firstVisibleNavPath,
+  isNavVisible,
+} from '@/lib/auth/role-visibility'
 import {
   MessageSquare,
   UserPlus,
@@ -38,9 +43,20 @@ type RangeDays = 7 | 30 | 90
 
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.page')
-  const { defaultCurrency } = useAuth()
+  const router = useRouter()
+  const { defaultCurrency, roleNavConfig, accountRole, loading } = useAuth()
   const [metrics, setMetrics] = useState<MetricsBundle | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
+
+  // Migration 055 — members whose dashboard option is hidden land on
+  // the first option their role CAN see (after the auth context
+  // settles, so the role is known).
+  useEffect(() => {
+    if (loading) return
+    if (!isNavVisible(roleNavConfig, accountRole, 'dashboard')) {
+      router.replace(firstVisibleNavPath(roleNavConfig, accountRole))
+    }
+  }, [loading, roleNavConfig, accountRole, router])
 
   const [range, setRange] = useState<RangeDays>(30)
   // Keep a cache per range so switching tabs doesn't re-fetch what we

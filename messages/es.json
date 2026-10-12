@@ -14,7 +14,8 @@
     "noAccount": "¿No tienes una cuenta?",
     "createAccount": "Crear cuenta",
     "linkExpired": "Ese enlace expiró. Para restablecer la contraseña, usa “¿Olvidaste tu contraseña?” y pide uno nuevo; si estabas confirmando tu correo, regístrate de nuevo.",
-    "linkInvalid": "No se pudo iniciar sesión con ese enlace. Si estabas confirmando tu correo, es posible que ya esté verificado; inicia sesión abajo. Para restablecer la contraseña, pide un enlace nuevo y ábrelo en el mismo navegador desde el que lo solicitaste."
+    "linkInvalid": "No se pudo iniciar sesión con ese enlace. Si estabas confirmando tu correo, es posible que ya esté verificado; inicia sesión abajo. Para restablecer la contraseña, pide un enlace nuevo y ábrelo en el mismo navegador desde el que lo solicitaste.",
+    "contactAdmin": "Para crear una cuenta, comuníquese con el administrador."
   },
   "Sidebar": {
     "title": "Luzdy CRM",
@@ -571,7 +572,21 @@
       "toastError": "Error en la importación",
       "notAuthenticated": "No autenticado",
       "notLinkedToAccount": "Tu perfil no está vinculado a una cuenta.",
-      "toastTagsSkippedMore": " (+{count} más)"
+      "toastTagsSkippedMore": " (+{count} más)",
+      "resultDuplicateIdentification": "{count} fila(s) omitida(s): número de identificación duplicado",
+      "duplicateIdentificationHint": "La identificación ya existe en esta cuenta o está repetida en el archivo — nunca se registra información duplicada.",
+      "structureHeading": "Estructura esperada del archivo",
+      "structureIdentification": "identificacion *",
+      "structureName": "nombre *",
+      "structureLastName": "apellido *",
+      "structurePhone": "celular",
+      "structureBirthMonth": "cumpleanos_mes (1-12)",
+      "structureBirthDay": "cumpleanos_dia (1-31)",
+      "structureTags": "etiquetas",
+      "structureHint": "La primera fila son los encabezados exactamente como se listan (sin tildes). Las filas sin identificacion, nombre o apellido se omiten; los duplicados por identificacion o celular nunca se registran.",
+      "resultMissingRequired": "{count} fila(s) omitida(s): falta identificacion, nombre o apellido",
+      "missingRequiredHint": "Estos tres campos corresponden al formulario de cliente de la agenda y son obligatorios en cada fila.",
+      "toastMissingRequired": "{count} fila(s) sin campos obligatorios"
     },
     "customFields": {
       "title": "Campos personalizados",
@@ -1814,7 +1829,8 @@
       "fields": "Campos y etiquetas",
       "deals": "Negocios y moneda",
       "members": "Miembros del equipo",
-      "api": "Claves de API"
+      "api": "Claves de API",
+      "roles": "Roles y accesos"
     },
     "groups": {
       "account": "Cuenta",
@@ -2055,6 +2071,34 @@
       "textPlaceholder": "El texto del mensaje que se insertará",
       "cancel": "Cancelar",
       "save": "Guardar"
+    },
+    "rolesConfig": {
+      "title": "Roles y accesos",
+      "description": "Define qué opciones de navegación y secciones de configuración puede ver cada rol. Lo que dejes sin marcar permanece visible.",
+      "ownerHint": "El propietario siempre ve todas las opciones — esta configuración aplica para administradores, agentes y observadores.",
+      "roleLabel": "Configurar rol",
+      "navGroup": "Opciones del menú (ocultas)",
+      "settingsGroup": "Secciones de configuración (ocultas)",
+      "hiddenHint": "MARCADO = oculto para este rol. Las opciones sin marcar siguen visibles.",
+      "save": "Guardar",
+      "saveFailed": "No se pudo guardar la configuración de visibilidad",
+      "savedToast": "Configuración de visibilidad guardada",
+      "networkError": "Error de conexión",
+      "navKeys": {
+        "dashboard": "Panel",
+        "inbox": "Bandeja de entrada",
+        "notifications": "Notificaciones",
+        "contacts": "Contactos",
+        "agenda": "Agenda",
+        "agendaHistorial": "Agenda Historial",
+        "services": "Servicios",
+        "pipelines": "Pipelines",
+        "broadcasts": "Difusiones",
+        "automations": "Automatizaciones",
+        "flows": "Flujos",
+        "aiAgents": "Agentes de IA",
+        "settings": "Configuración"
+      }
     }
   },
   "SignupPage": {
@@ -2601,7 +2645,9 @@
       "nameTooLong": "El nombre de la cuenta debe tener {max} caracteres o menos",
       "updateFailed": "Error al actualizar la cuenta",
       "transferFailed": "Error al transferir la propiedad",
-      "newOwnerInvalid": "newOwnerUserId debe ser un UUID válido"
+      "newOwnerInvalid": "newOwnerUserId debe ser un UUID válido",
+      "loadFailed": "No se pudo cargar la cuenta",
+      "saveFailed": "No se pudo guardar"
     },
     "invitations": {
       "redeemFailed": "Error al aceptar la invitación",
@@ -2975,7 +3021,32 @@
     "visibilityOwner": "Como propietario ves las agendas de todos los miembros y puedes registrar citas para cualquiera de ellos.",
     "visibilityAdmin": "Como administrador ves las agendas de todos los miembros y puedes registrar citas para cualquiera de ellos.",
     "visibilityAgent": "Solo ves tu propia agenda. Si el propietario te activa «Puede registrar citas», podrás crear y editar tus propias citas.",
-    "visibilityViewer": "Vista de lectura: puedes consultar todas las agendas, pero no modificar citas."
+    "visibilityViewer": "Vista de lectura: puedes consultar todas las agendas, pero no modificar citas.",
+    "importButton": "Importar citas",
+    "importModal": {
+      "title": "Importar citas",
+      "description": "Sube un CSV y cada fila se convierte en una cita, validada con las mismas reglas de la agenda (capacidad, horario, permisos).",
+      "specialistLabel": "Especialista atiende",
+      "specialistHint": "Todas las citas importadas se asignarán a este miembro.",
+      "fileLabel": "Archivo CSV",
+      "columnsHint": "Columnas requeridas: identificacion, fecha (AAAA-MM-DD), hora (HH:MM), servicio (nombre exacto). Opcionales: duracion (minutos), notas.",
+      "noRows": "No se encontraron filas utilizables (verifica las columnas requeridas)",
+      "missingColumns": "Faltan columnas requeridas: identificacion, fecha, hora, servicio",
+      "rowsDetected": "{count} fila(s) detectadas",
+      "progress": "Procesando {done} de {total}…",
+      "specialistRequired": "Selecciona el especialista",
+      "contactNotFound": "Contacto con identificación {id} no encontrado",
+      "serviceNotFoundRow": "Servicio \"{name}\" no encontrado",
+      "badDateTime": "Formato de fecha u hora inválido",
+      "rowFailed": "No se pudo crear la cita",
+      "resultCreated": "{count, plural, one {# cita creada} other {# citas creadas}}",
+      "resultFailed": "{count, plural, one {# fila con error} other {# filas con error}}",
+      "failedRow": "Línea {line} (ID {id})",
+      "importedToast": "{count, plural, one {# cita importada} other {# citas importadas}}",
+      "failedToast": "{count, plural, one {No se pudo importar # fila} other {No se pudieron importar # filas}}",
+      "close": "Cerrar",
+      "import": "Importar"
+    }
   },
   "AgendaHistory": {
     "title": "Agenda Historial",
