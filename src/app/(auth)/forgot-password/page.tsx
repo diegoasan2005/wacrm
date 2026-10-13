@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,11 +33,13 @@ export default function ForgotPasswordPage() {
 
     // The emailed link returns to /auth/callback, which exchanges it
     // for a recovery session and forwards to /reset-password (issue
-    // #592). Supabase must allow this origin under Authentication →
+    // #592). NEXT_PUBLIC_SITE_URL wins so the email points at the
+    // real deployment even when the request comes from localhost.
+    // Supabase must allow this origin under Authentication →
     // URL Configuration → Redirect URLs, or it silently falls back to
     // its Site URL; see docs/auth-emails.md.
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+      redirectTo: `${getSiteUrl()}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
     });
 
     if (error) {

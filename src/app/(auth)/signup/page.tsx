@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,20 +64,16 @@ function SignupPageInner() {
 
     setLoading(true);
 
-    // Always name our own origin as the place the confirmation link
-    // returns to. Previously this was left unset unless an invite was
-    // involved, so Supabase fell back to its Site URL — which on a
-    // freshly-created or self-hosted project is `http://localhost:3000`
-    // (issue #595) — and even when the Site URL was right the link
-    // landed on `/` with an unexchanged `?code=`, so the user had to
-    // sign in again after verifying. /auth/callback exchanges the link
-    // for a session and forwards to `next` (issue #592). Supabase still
-    // has to allow this origin under Authentication → URL Configuration
-    // → Redirect URLs; see docs/auth-emails.md.
+    // Prefer NEXT_PUBLIC_SITE_URL so the confirmation email always
+    // points at the real deployment (a localhost signup must not
+    // email a localhost link). /auth/callback exchanges the link for
+    // a session and forwards to `next`. Supabase still has to allow
+    // this origin under Authentication → URL Configuration →
+    // Redirect URLs; see docs/auth-emails.md.
     const next = inviteToken
       ? `/join/${encodeURIComponent(inviteToken)}`
       : "/dashboard";
-    const emailRedirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    const emailRedirectTo = `${getSiteUrl()}/auth/callback?next=${encodeURIComponent(next)}`;
 
     const { error } = await supabase.auth.signUp({
       email,

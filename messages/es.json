@@ -15,7 +15,8 @@
     "createAccount": "Crear cuenta",
     "linkExpired": "Ese enlace expiró. Para restablecer la contraseña, usa “¿Olvidaste tu contraseña?” y pide uno nuevo; si estabas confirmando tu correo, regístrate de nuevo.",
     "linkInvalid": "No se pudo iniciar sesión con ese enlace. Si estabas confirmando tu correo, es posible que ya esté verificado; inicia sesión abajo. Para restablecer la contraseña, pide un enlace nuevo y ábrelo en el mismo navegador desde el que lo solicitaste.",
-    "contactAdmin": "Para crear una cuenta, comuníquese con el administrador."
+    "contactAdmin": "Para crear una cuenta, comuníquese con el administrador.",
+    "backToLanding": "Volver al inicio"
   },
   "Sidebar": {
     "title": "Luzdy CRM",

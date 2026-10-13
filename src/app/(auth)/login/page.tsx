@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { UsersRound } from "lucide-react";
+import { ArrowLeft, UsersRound } from "lucide-react";
 import { BrandMark } from "@/components/auth/brand-mark";
 
 // `useSearchParams` opts the component out of static prerendering
@@ -85,16 +85,31 @@ function LoginPageInner() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+      {/* Back to the public landing */}
+      <div className="mb-3 w-full max-w-md">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-primary"
+        >
+          <ArrowLeft className="size-4" />
+          {t('backToLanding')}
+        </Link>
+      </div>
+
       <Card className="w-full max-w-md border-border bg-card">
         <CardHeader className="items-center text-center">
-          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+          <Link
+            href="/"
+            className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-transform hover:scale-105"
+            title={t('backToLanding')}
+          >
             {inviteToken ? (
               <UsersRound className="h-6 w-6 text-primary" />
             ) : (
               <BrandMark className="h-8 w-8 object-contain" />
             )}
-          </div>
+          </Link>
           <CardTitle className="text-xl text-foreground">
             {inviteToken ? t('titleAccept') : t('titleWelcome')}
           </CardTitle>
