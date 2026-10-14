@@ -42,12 +42,23 @@ import {
   type AgendaRoleContext,
 } from "@/lib/appointments/permissions";
 import { STATUS_META } from "@/lib/appointments/statuses";
+import { cn } from "@/lib/utils";
 import {
-  minutesToHHMM,
   wallTimeToUtc,
   utcToDateKey,
   utcToMinutes,
 } from "@/lib/appointments/time";
+
+/** 12-hour clock label ("9:30 a. m.") — matches the agenda's visual
+ *  language on every device. */
+function format12h(minutes: number): string {
+  const m = ((minutes % 1440) + 1440) % 1440;
+  const h24 = Math.floor(m / 60);
+  const mm = String(m % 60).padStart(2, "0");
+  const period = h24 < 12 ? "a. m." : "p. m.";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return `${h12}:${mm} ${period}`;
+}
 import { DEFAULT_DURATIONS } from "@/lib/appointments/constants";
 import type {
   Appointment,
@@ -365,9 +376,24 @@ export function AppointmentDialog({
   }, [roleCtx, isEdit, appointment]);
 
   const endTime = useMemo(
-    () => minutesToHHMM(timeMinutes + Number(duration || 0)),
+    () => format12h(timeMinutes + Number(duration || 0)),
     [timeMinutes, duration],
   );
+
+  // 12-hour AM/PM parts of the selected time — the native time input
+  // follows the device locale (often 24h on phones), so the dialog
+  // renders its own AM/PM picker instead: same look everywhere.
+  const hour12 = (() => {
+    const h24 = Math.floor(timeMinutes / 60) % 24;
+    return h24 % 12 === 0 ? 12 : h24 % 12;
+  })();
+  const minutePart = String(timeMinutes % 60).padStart(2, "0");
+  const period: "AM" | "PM" = timeMinutes >= 720 ? "PM" : "AM";
+
+  function setTimeParts(h12: number, m: number, p: "AM" | "PM") {
+    const h24 = (p === "PM" ? 12 : 0) + (h12 % 12);
+    setTimeMinutes(h24 * 60 + m);
+  }
 
   // Contact search box visibility: editing shows the linked contact;
   // creating offers search + inline creation.
@@ -623,19 +649,76 @@ export function AppointmentDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="appt-time">{t("time")} *</Label>
-              <Input
-                id="appt-time"
-                type="time"
-                step={300}
-                value={minutesToHHMM(timeMinutes)}
-                onChange={(e) => {
-                  const [h = "0", m = "0"] = e.target.value.split(":");
-                  setTimeMinutes(Number(h) * 60 + Number(m));
-                }}
-                disabled={readOnly}
-                className="bg-background border-border"
-              />
+              <Label>{t("time")} *</Label>
+              {/* Custom AM/PM picker — the native time input follows
+                  the device locale (often 24h on phones); this looks
+                  the same everywhere. 15-minute steps. */}
+              <div className="flex items-center gap-1.5">
+                <Select
+                  value={String(hour12)}
+                  onValueChange={(v) =>
+                    v && setTimeParts(Number(v), Number(minutePart), period)
+                  }
+                  disabled={readOnly}
+                >
+                  <SelectTrigger className="w-[4.5rem] bg-background border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                      <SelectItem key={h} value={String(h)}>
+                        {h}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={minutePart}
+                  onValueChange={(v) =>
+                    v && setTimeParts(hour12, Number(v), period)
+                  }
+                  disabled={readOnly}
+                >
+                  <SelectTrigger className="w-[4.5rem] bg-background border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* 5-minute steps across the hour. */}
+                    {Array.from({ length: 12 }, (_, i) =>
+                      String(i * 5).padStart(2, "0"),
+                    ).map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex flex-1 items-center gap-1">
+                  {(["AM", "PM"] as const).map((p) => {
+                    const active = period === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() =>
+                          setTimeParts(hour12, Number(minutePart), p)
+                        }
+                        disabled={readOnly}
+                        aria-pressed={active}
+                        className={cn(
+                          "h-9 flex-1 rounded-md border text-xs font-semibold transition-colors disabled:opacity-50",
+                          active
+                            ? "border-transparent text-white"
+                            : "border-border bg-background text-muted-foreground hover:bg-muted",
+                        )}
+                        style={active ? { backgroundColor: "#FC0178" } : undefined}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>{t("specialist")} *</Label>

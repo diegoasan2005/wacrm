@@ -69,6 +69,34 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   tags: ['tags', 'etiquetas'],
 };
 
+/**
+ * Header normalisation — strips quotes, `*` markers, parenthetical
+ * hints like "(1-12)" and accents, so "Identificación *",
+ * "cumpleanos_mes (1-12)" and "cumpleaños" all match their alias.
+ */
+function cleanHeader(h: string): string {
+  return h
+    .replace(/["']/g, '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\*/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+/** Pick the delimiter used by the file: comma, semicolon or tab
+ *  (Excel in Spanish locales exports `;`, copies use tabs). */
+export function detectDelimiter(headerLine: string): string {
+  const candidates: [string, number][] = [
+    [',', (headerLine.match(/,/g) ?? []).length],
+    [';', (headerLine.match(/;/g) ?? []).length],
+    ['\t', (headerLine.match(/\t/g) ?? []).length],
+  ];
+  candidates.sort((a, b) => b[1] - a[1]);
+  return candidates[0][1] > 0 ? candidates[0][0] : ',';
+}
+
 export function parseContactCsv(text: string): ParseContactCsvResult {
   const empty: ParseContactCsvResult = {
     rows: [],
@@ -83,9 +111,10 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return empty;
 
+  const delimiter = detectDelimiter(lines[0]);
   const headers = lines[0]
-    .split(',')
-    .map((h) => h.trim().toLowerCase().replace(/["']/g, ''));
+    .split(delimiter)
+    .map(cleanHeader);
 
   const find = (logical: string) => {
     const aliases = COLUMN_ALIASES[logical];
@@ -113,7 +142,7 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
     const line = lines[i].trim();
     if (!line) continue;
 
-    const values = parseCsvLine(line);
+    const values = parseCsvLine(line, delimiter);
     const cell = (idx: number) =>
       idx >= 0 ? values[idx]?.replace(/["']/g, '').trim() || undefined : undefined;
 
@@ -152,8 +181,9 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
   };
 }
 
-/** Simple CSV line parse (handles quoted fields). */
-function parseCsvLine(line: string): string[] {
+/** Simple CSV line parse (handles quoted fields and the file's
+ *  detected delimiter). */
+function parseCsvLine(line: string, delimiter: string): string[] {
   const values: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -161,7 +191,7 @@ function parseCsvLine(line: string): string[] {
   for (const char of line) {
     if (char === '"') {
       inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       values.push(current.trim());
       current = '';
     } else {

@@ -12,7 +12,12 @@ import {
   isUniqueViolation,
   type ExistingContact,
 } from '@/lib/contacts/dedupe';
-import { parseInternationalPhone } from '@/lib/whatsapp/phone-utils';
+import {
+  parseInternationalPhone,
+  isValidE164,
+  normalizePhone,
+  withColombiaPrefix,
+} from '@/lib/whatsapp/phone-utils';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +58,8 @@ export function ContactForm({
   const isEdit = !!contact;
 
   const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [identification, setIdentification] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -74,6 +81,8 @@ export function ContactForm({
   useEffect(() => {
     if (open) {
       setName(contact?.name ?? '');
+      setLastName(contact?.last_name ?? '');
+      setIdentification(contact?.identification ?? '');
       setPhone(contact?.phone ?? '');
       setEmail(contact?.email ?? '');
       setCompany(contact?.company ?? '');
@@ -131,14 +140,31 @@ export function ContactForm({
       return;
     }
 
-    // A number typed here must carry its country code (leading `+`):
-    // "4155551212" reads as a US number to the person typing it but is
-    // delivered to +41 (Switzerland) by Meta (issue #586). Only checked
-    // when the number actually changed — contacts created by the inbound
-    // webhook store Meta's digits-only form, and editing their name must
-    // not be blocked by a phone the user never touched.
-    const phoneChanged = !isEdit || phone.trim() !== (contact?.phone ?? '');
-    if (phoneChanged && !parseInternationalPhone(phone)) {
+    if (!identification.trim() || !name.trim() || !lastName.trim()) {
+      toast.error(t('requiredFieldsMissing'));
+      return;
+    }
+
+    // Auto-prefix: a locally typed number (no leading `+`) gets
+    // Colombia's 57 prepended so it matches the webhook's stored
+    // format. An explicit `+` means the user owns the country code —
+    // validate it and respect it as-is.
+    // STORED SHAPE — always DIGITS-ONLY (normalizePhone), exactly
+    // like the webhook stores Meta's `from`: "573104023557", never
+    // "+57…". phone_normalized derives from this, so both stay in
+    // the same namespace as webhook-created contacts.
+    const raw = phone.trim();
+    let finalPhone: string;
+    if (raw.startsWith('+')) {
+      if (!parseInternationalPhone(raw)) {
+        toast.error(t('phoneNeedsCountryCode'));
+        return;
+      }
+      finalPhone = normalizePhone(raw);
+    } else {
+      finalPhone = withColombiaPrefix(raw);
+    }
+    if (!isValidE164(finalPhone)) {
       toast.error(t('phoneNeedsCountryCode'));
       return;
     }
@@ -167,7 +193,9 @@ export function ContactForm({
           .from('contacts')
           .update({
             name: name.trim() || null,
-            phone: phone.trim(),
+            last_name: lastName.trim() || null,
+            identification: identification.trim() || null,
+            phone: finalPhone,
             email: email.trim() || null,
             company: company.trim() || null,
             updated_at: new Date().toISOString(),
@@ -181,7 +209,9 @@ export function ContactForm({
             user_id: user.id,
             account_id: accountId,
             name: name.trim() || null,
-            phone: phone.trim(),
+            last_name: lastName.trim() || null,
+            identification: identification.trim() || null,
+            phone: finalPhone,
             email: email.trim() || null,
             company: company.trim() || null,
           })
@@ -249,14 +279,40 @@ export function ContactForm({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="cf-identification" className="text-muted-foreground">
+              {t('identificationLabel')} <span className="text-red-400">*</span>
+            </Label>
+            <Input
+              id="cf-identification"
+              value={identification}
+              onChange={(e) => setIdentification(e.target.value)}
+              placeholder={t('identificationPlaceholder')}
+              className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="cf-name" className="text-muted-foreground">
-              {t('nameLabel')}
+              {t('nameLabel')} <span className="text-red-400">*</span>
             </Label>
             <Input
               id="cf-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('namePlaceholder')}
+              className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cf-lastname" className="text-muted-foreground">
+              {t('lastNameLabel')} <span className="text-red-400">*</span>
+            </Label>
+            <Input
+              id="cf-lastname"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder={t('lastNamePlaceholder')}
               className="bg-muted border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>

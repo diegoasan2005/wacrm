@@ -129,6 +129,10 @@ export interface Contact {
    *  are user-changeable, so they must never key a contact. */
   wa_username?: string | null;
   name?: string;
+  /** Surname — agenda client form field (migration 047). */
+  last_name?: string | null;
+  /** Business ID number — the agenda/contact import dedup key (047). */
+  identification?: string | null;
   email?: string;
   company?: string;
   avatar_url?: string;

@@ -538,8 +538,10 @@ export function ServicesManager() {
       </div>
 
       {/* Table */}
-      <div className="rounded-lg border border-border overflow-hidden">
-        <Table>
+      {/* Responsive table: horizontal scroll on narrow screens so
+          every column — Miembros included — stays reachable. */}
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <Table className="min-w-[42rem]">
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
               <TableHead className="text-muted-foreground">{t("table.name")}</TableHead>
@@ -550,9 +552,7 @@ export function ServicesManager() {
               <TableHead className="text-muted-foreground hidden lg:table-cell">
                 {t("table.maxConcurrent")}
               </TableHead>
-              <TableHead className="text-muted-foreground hidden xl:table-cell">
-                {t("table.members")}
-              </TableHead>
+              <TableHead className="text-muted-foreground">{t("table.members")}</TableHead>
               <TableHead className="text-muted-foreground">{t("table.isDefault")}</TableHead>
               <TableHead className="text-muted-foreground">{t("table.status")}</TableHead>
               {canWrite && (
@@ -604,7 +604,7 @@ export function ServicesManager() {
                   <TableCell className="text-muted-foreground hidden lg:table-cell">
                     {service.max_concurrent ?? 1}
                   </TableCell>
-                  <TableCell className="hidden xl:table-cell">
+                  <TableCell>
                     {(service.member_ids ?? []).length === 0 ? (
                       <Badge className="border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
                         {t("membersAll")}

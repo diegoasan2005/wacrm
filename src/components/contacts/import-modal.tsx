@@ -7,6 +7,7 @@ import {
   isUniqueViolation,
   normalizeKey,
 } from '@/lib/contacts/dedupe';
+import { withColombiaPrefix } from '@/lib/whatsapp/phone-utils';
 import {
   parseContactCsv,
   type ParsedContactRow,
@@ -290,6 +291,12 @@ export function ImportModal({
 
       // 2b) Phone dedupe among the remaining rows (celular is
       //     optional, but when present it must not collide either).
+      //     A locally typed number gets Colombia's 57 prefix applied
+      //     so it matches the webhook's stored format.
+      toInsert = toInsert.map((row) => ({
+        ...row,
+        phone: withColombiaPrefix(row.phone),
+      }));
       const seenPhones = new Set<string>();
       toInsert = toInsert.filter((row) => {
         const key = row.phone ? normalizeKey(row.phone) : '';

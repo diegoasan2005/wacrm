@@ -18,6 +18,23 @@ export function normalizePhone(phone: string): string {
 }
 
 /**
+ * Ensure a locally-entered phone carries Colombia's country code (57).
+ *
+ * Applies when the number was typed WITHOUT any country prefix (the
+ * user entered just the national number — 10-digit mobiles or 8-digit
+ * landlines). Numbers that already start with 57 (webhook contacts,
+ * full international entries) pass through untouched.
+ *
+ * Returns digits-only, the same shape the webhook stores.
+ */
+export function withColombiaPrefix(phone: string): string {
+  const digits = normalizePhone(phone)
+  if (!digits) return ''
+  if (digits.startsWith('57')) return digits
+  return `57${digits}`
+}
+
+/**
  * Compare two phone numbers accounting for trunk prefix differences.
  * e.g. "370063949836" (with trunk 0) matches "37063949836" (without trunk 0)
  * by comparing the last 8 digits.

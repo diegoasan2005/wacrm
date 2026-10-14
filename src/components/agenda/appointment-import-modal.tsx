@@ -24,6 +24,9 @@ import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { createClient } from "@/lib/supabase/client";
+import {
+  detectDelimiter,
+} from "@/lib/contacts/parse-contact-csv";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -74,14 +77,14 @@ interface AppointmentImportModalProps {
   onImported: () => void;
 }
 
-function parseCsvLine(line: string): string[] {
+function parseCsvLine(line: string, delimiter: string): string[] {
   const values: string[] = [];
   let current = "";
   let inQuotes = false;
   for (const char of line) {
     if (char === '"') {
       inQuotes = !inQuotes;
-    } else if (char === "," && !inQuotes) {
+    } else if (char === delimiter && !inQuotes) {
       values.push(current.trim());
       current = "";
     } else {
@@ -115,7 +118,14 @@ export function AppointmentImportModal({
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [result, setResult] = useState<ImportResult | null>(null);
 
-  const eligibleMembers = members.filter((m) => m.role !== "viewer");
+  // Import combo (migration 056): owner/admin always; agents listed
+  // with the booking permission EVEN if "En agenda" is off — the
+  // owner explicitly assigns the import to them. Viewers excluded.
+  const eligibleMembers = members.filter((m) => {
+    if (m.role === "viewer") return false;
+    if (m.role === "owner" || m.role === "admin") return true;
+    return (m.show_in_agenda ?? true) || !!m.can_book_appointments;
+  });
   const selectedSpecialist =
     eligibleMembers.find(
       (m) => m.user_id === (specialistId || defaultSpecialistId),
@@ -146,9 +156,21 @@ export function AppointmentImportModal({
       return;
     }
 
+    // Same tolerance as the contacts importer: `,` `;` or tab
+    // delimiters, headers with accents/markers/parentheticals.
+    const delimiter = detectDelimiter(lines[0]);
     const headers = lines[0]
-      .split(",")
-      .map((h) => h.trim().toLowerCase().replace(/["']/g, ""));
+      .split(delimiter)
+      .map((h) =>
+        h
+          .replace(/["']/g, "")
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .replace(/\*/g, "")
+          .replace(/\([^)]*\)/g, "")
+          .trim()
+          .toLowerCase(),
+      );
     const idx = (names: string[]) =>
       headers.findIndex((h) => names.includes(h));
 
@@ -169,7 +191,7 @@ export function AppointmentImportModal({
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      const values = parseCsvLine(line);
+      const values = parseCsvLine(line, delimiter);
       parsed.push({
         identification: pick(values, idIdx),
         fecha: pick(values, fechaIdx),

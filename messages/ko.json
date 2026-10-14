@@ -429,7 +429,7 @@
       "namePlaceholder": "홍길동",
       "phoneLabel": "전화번호",
       "phonePlaceholder": "+1234567890",
-      "phoneHint": "국가 코드를 포함하세요. 예: 미국은 +1",
+      "phoneHint": "콜롬비아 국가코드 +57. 입력하지 않으면 자동으로 추가됩니다.",
       "emailLabel": "이메일",
       "emailPlaceholder": "jane@example.com",
       "companyLabel": "회사",
@@ -454,7 +454,12 @@
       "phoneRequired": "전화번호는 필수입니다",
       "phoneNeedsCountryCode": "국가 코드를 포함하세요. 번호는 +로 시작해야 합니다 (예: +14155550123)",
       "notAuthenticated": "인증되지 않았습니다",
-      "notLinkedToAccount": "프로필이 계정에 연결되어 있지 않습니다."
+      "notLinkedToAccount": "프로필이 계정에 연결되어 있지 않습니다.",
+      "identificationLabel": "신분증 번호",
+      "identificationPlaceholder": "신분증 번호",
+      "lastNameLabel": "성",
+      "lastNamePlaceholder": "성",
+      "requiredFieldsMissing": "신분증, 이름, 성은 필수입니다"
     },
     "detailView": {
       "tabs": {
@@ -606,6 +611,10 @@
       "toastRenameFailed": "필드 이름을 변경할 수 없습니다.",
       "toastDeleteFailed": "필드를 삭제할 수 없습니다.",
       "toastDeleted": "\"{name}\"을(를) 삭제했습니다."
+    },
+    "tableColumns": {
+      "identification": "신분증",
+      "lastName": "성"
     }
   },
   "Pipelines": {

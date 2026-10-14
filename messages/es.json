@@ -429,7 +429,7 @@
       "namePlaceholder": "María Pérez",
       "phoneLabel": "Número de teléfono",
       "phonePlaceholder": "+1234567890",
-      "phoneHint": "Incluye el código de país, p. ej. +52 para México",
+      "phoneHint": "Código de país +57 para Colombia. Si no lo incluyes, se agrega automáticamente.",
       "emailLabel": "Correo electrónico",
       "emailPlaceholder": "maria@example.com",
       "companyLabel": "Empresa",
@@ -454,7 +454,12 @@
       "phoneRequired": "El número de teléfono es obligatorio",
       "phoneNeedsCountryCode": "Incluye el código de país — el número debe empezar con + (p. ej. +5215512345678)",
       "notAuthenticated": "No autenticado",
-      "notLinkedToAccount": "Tu perfil no está vinculado a una cuenta."
+      "notLinkedToAccount": "Tu perfil no está vinculado a una cuenta.",
+      "identificationLabel": "Identificación",
+      "identificationPlaceholder": "Número de identificación",
+      "lastNameLabel": "Apellido",
+      "lastNamePlaceholder": "Pérez",
+      "requiredFieldsMissing": "Identificación, nombre y apellido son obligatorios"
     },
     "detailView": {
       "tabs": {
@@ -606,6 +611,10 @@
       "toastRenameFailed": "No se pudo renombrar el campo.",
       "toastDeleteFailed": "No se pudo eliminar el campo.",
       "toastDeleted": "\"{name}\" eliminado."
+    },
+    "tableColumns": {
+      "identification": "Identificación",
+      "lastName": "Apellido"
     }
   },
   "Pipelines": {

@@ -13,7 +13,7 @@ import { NextResponse } from "next/server";
 
 import { getCurrentAccount, toErrorResponse } from "@/lib/auth/account";
 import { findExistingContact } from "@/lib/contacts/dedupe";
-import { normalizePhone } from "@/lib/whatsapp/phone-utils";
+import { withColombiaPrefix } from "@/lib/whatsapp/phone-utils";
 import { localizeAppointmentDbError } from "@/lib/appointments/server-errors";
 import { getT } from "@/lib/i18n/translate";
 
@@ -136,19 +136,21 @@ async function resolveContact(
   // inbound message. Exact phone_normalized equality alone would
   // miss cross-prefix pairs and split the client in two.
   if (phone) {
-    const existing = await findExistingContact(ctx.supabase, ctx.accountId, phone);
+    const prefixed = withColombiaPrefix(phone);
+    const existing = await findExistingContact(ctx.supabase, ctx.accountId, prefixed);
     if (existing) return { ok: true, id: existing.id };
   }
 
-  // Create — phone is stored DIGITS-ONLY, the same shape the webhook
-  // writes (Meta's `from` digits, country code included when Meta
-  // provides it). A locally typed number keeps the digits entered.
+  // Create — phone is stored DIGITS-ONLY with Colombia's 57 prefix
+  // applied when the user typed a local number, the same shape the
+  // webhook writes (Meta's `from` digits).
+  const prefixedPhone = withColombiaPrefix(phone);
   const { data: created, error } = await ctx.supabase
     .from("contacts")
     .insert({
       account_id: ctx.accountId,
       user_id: ctx.userId,
-      phone: normalizePhone(phone),
+      phone: prefixedPhone,
       name,
       last_name: lastName || null,
       identification,
