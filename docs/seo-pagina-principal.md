@@ -1,9 +1,9 @@
 # Plan de mejoras SEO — Página principal de Luzdy Jiménez
 
-**Fecha:** 2026-10-18 (v2) · act. 2026-10-25 (v3: ciudad y dirección confirmadas; mapa de Google ya visible en la landing)
+**Fecha:** 2026-10-18 (v2) · act. 2026-10-25 (v3: ciudad y dirección confirmadas; mapa de Google ya visible en la landing) · act. 2026-11-08 (v4: horarios confirmados)
 **Alcance:** Landing pública en `src/app/page.tsx` (ruta `/`) y sus archivos de soporte (`src/app/layout.tsx`, `next.config.ts`, `messages/*.json`, `public/`).
-**Estado:** ⚠️ Propuesta. **No se ha aplicado ningún cambio al código.** Este documento espera tu aprobación.
-**Datos confirmados:** dominio `https://luzdy.beauty` (`.env:51` → `NEXT_PUBLIC_SITE_URL`) · idioma `es` (`.env:56` → `NEXT_PUBLIC_APP_LOCALE`) · **dirección "Cl 1 # 12-18, Pereira, Risaralda" (2026-10-25)**.
+**Estado:** ✅ **Aplicado el 2026-11-08** (P0 → P3 en orden, verificado en local: metadatos, JSON-LD, robots.txt, sitemap.xml, FAQ y `next/image`; 1173 tests en verde). Quedan pendientes por decisión del usuario: **P3-5** (caché para `/`, sensible por el CDN de Hostinger) y **P3-6** (foto real en el hero, requiere una foto).
+**Datos confirmados:** dominio `https://luzdy.beauty` (`.env:51` → `NEXT_PUBLIC_SITE_URL`) · idioma `es` (`.env:56` → `NEXT_PUBLIC_APP_LOCALE`) · **dirección "Cl 1 # 12-18, Pereira, Risaralda" (2026-10-25)** · **horario lunes a sábado 9:00–18:00, cerrado domingos y festivos (2026-11-08)**.
 
 ---
 
@@ -27,7 +27,7 @@ Problemas adicionales encontrados (detallados abajo): descripciones heredadas de
 
 #### P0-1. Permitir la indexación de la landing (quitar el `noindex` heredado)
 
-**Archivo:** `src/app/page.tsx` (bloque `export const metadata`, línea 338).
+**Archivo:** `src/app/page.tsx` (bloque `export const metadata`, línea 392).
 
 La estrategia actual (noindex global) es correcta para un CRM: `/dashboard`, `/inbox`, `/login`, etc. **no** deben indexarse. Lo que falta es la excepción para la única página pública. Como la fusión de metadata es por campos, basta con que la landing defina su propio objeto `robots` completo:
 
@@ -123,11 +123,11 @@ Lo que sí sobra es la descripción heredada de la plantilla: `messages/es.json`
 
 #### P1-2. Mejorar la meta description de la landing
 
-La actual (`src/app/page.tsx:342-343`) está bien pero es genérica. Propuesta (incluye palabra clave + servicio + llamada a la acción, ≤160 caracteres):
+La actual (`src/app/page.tsx:396-397`) está bien pero es genérica y no menciona la ciudad. Propuesta con Pereira (palabra clave + servicio + localidad + llamada a la acción, ~158 caracteres):
 
-> "Depilación de cejas con hilo, micropigmentación, manicure, lifting de pestañas y limpieza facial con Luzdy Jiménez. Agenda tu cita por WhatsApp hoy."
+> "Depilación de cejas con hilo, micropigmentación, manicure, lifting de pestañas y limpieza facial con Luzdy Jiménez en Pereira. Agenda tu cita por WhatsApp."
 
-(Opcional, si me confirmas la ciudad: añadir «en {Ciudad}» — refuerza el SEO local.)
+**Opcional:** incorporar Pereira también al `<title>` — p. ej. `"Luzdy Jiménez | Cejas y Belleza en Pereira"` (43 caracteres). Refuerza la búsqueda local «cejas Pereira» a costa de la palabra "Especialista"; lo dejo a tu criterio.
 
 #### P1-3. Open Graph y Twitter Card
 
@@ -168,8 +168,19 @@ Google no sabe que esto es un negocio de belleza. Añadir en el servidor de `src
   "telephone": "+573116219282",
   "priceRange": "$$",
   "sameAs": ["https://instagram.com/luzdy_jimenez"],
-  "address": { "@type": "PostalAddress", "addressLocality": "CIUDAD", "addressCountry": "CO" },
-  "openingHoursSpecification": [{ "@type": "OpeningHoursSpecification", "dayOfWeek": [], "opens": "", "closes": "" }],
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Cl 1 # 12-18",
+    "addressLocality": "Pereira",
+    "addressRegion": "Risaralda",
+    "addressCountry": "CO"
+  },
+  "openingHoursSpecification": [{
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    "opens": "09:00",
+    "closes": "18:00"
+  }],
   "hasOfferCatalog": {
     "@type": "OfferCatalog",
     "name": "Servicios de belleza",
@@ -178,7 +189,7 @@ Google no sabe que esto es un negocio de belleza. Añadir en el servidor de `src
 }
 ```
 
-(con los 9 servicios en `hasOfferCatalog`; dirección/horarios como placeholders hasta que me los confirmes). Esto habilita el panel enriched en Google ("negocio de belleza cerca de mí"), estrellas y elegibilidad para resultados locales.
+(con los 9 servicios en `hasOfferCatalog`). **Nota sobre festivos:** schema.org no tiene propiedad para «cerrado domingos y festivos» — basta con declarar solo los días abiertos (lunes a sábado); el cierre se comunica en texto visible (sección Ubicación/FAQ). Esto habilita el panel enriched en Google ("negocio de belleza cerca de mí"), estrellas y elegibilidad para resultados locales.
 
 ---
 
@@ -186,11 +197,11 @@ Google no sabe que esto es un negocio de belleza. Añadir en el servidor de `src
 
 | # | Cambio | Detalle |
 |---|--------|---------|
-| P2-1 | **H1 con marca y palabra clave** | Hoy el `<h1>` es "Realza tu belleza natural" (`page.tsx:158-163`). Proponer: **"Realza tu belleza natural con Luzdy Jiménez"** — mantiene el diseño y añade la marca al elemento más importante para SEO. |
-| P2-2 | **Ciudad y ubicación visibles** | ✅ Parcial (2026-10-25): sección "Ubicación" con mapa y dirección ya en la landing. Falta: ciudad en el subtítulo del hero, en el footer y en los metadatos (description, JSON-LD). |
+| P2-1 | **H1 con marca y palabra clave** | Hoy el `<h1>` es "Realza tu belleza natural" (`page.tsx:169-174`). Proponer: **"Realza tu belleza natural con Luzdy Jiménez"** — mantiene el diseño y añade la marca al elemento más importante para SEO. |
+| P2-2 | **Ciudad y ubicación visibles** | ✅ Parcial (2026-10-25): sección "Ubicación" con mapa y dirección ya en la landing (`page.tsx:334-372`). Falta: ciudad en el subtítulo del hero, en el footer y en los metadatos (description, JSON-LD), y añadir el **horario visible** (lunes a sábado, 9:00–18:00 · domingos y festivos cerrado) junto a la dirección. |
 | P2-3 | **NAP consistente** (Nombre, Dirección, Teléfono) | Añadir teléfono visible como enlace `tel:+573116219282` junto al QR de WhatsApp. |
-| P2-4 | **Sección de preguntas frecuentes** | 4–6 preguntas reales ("¿Cuánto dura la micropigmentación de cejas?", "¿Qué cuidado necesita el laminado?", "¿Cómo agendo mi cita?") con schema `FAQPage`. Captura búsquedas de cola larga y ocupa más espacio en la página de resultados. |
-| P2-5 | **Textos alternativos más descriptivos** | Los `alt` de las fotos de servicios son solo el nombre (`page.tsx:219`). Proponer: `alt="Depilación de cejas con hilo — Luzdy Jiménez"`, etc. Ayuda a Google Imágenes. |
+| P2-4 | **Sección de preguntas frecuentes** | 4–6 preguntas reales ("¿Cuánto dura la micropigmentación de cejas?", "¿Qué cuidado necesita el laminado?", "¿Cuál es el horario? — Lunes a sábado de 9:00 a. m. a 6:00 p. m.; domingos y festivos no atendemos", "¿Cómo agendo mi cita?") con schema `FAQPage`. Captura búsquedas de cola larga y ocupa más espacio en la página de resultados. |
+| P2-5 | **Textos alternativos más descriptivos** | Los `alt` de las fotos de servicios son solo el nombre (`page.tsx:230`). Proponer: `alt="Depilación de cejas con hilo — Luzdy Jiménez"`, etc. Ayuda a Google Imágenes. |
 | P2-6 | **H2 con palabra clave** | "Belleza de pies a cabeza" es bonito pero genérico. Alternativa: "Nuestros servicios de belleza y estética". |
 
 ---
@@ -201,7 +212,7 @@ Google no sabe que esto es un negocio de belleza. Añadir en el servidor de `src
 |---|--------|---------|
 | P3-1 | **Migrar los `<img>` a `next/image`** | Hoy son `<img>` crudos con eslint deshabilitado. `next/image` sirve WebP/AVIF, `srcset` responsive y lazy-loading automático. El logo (`public/luzdy-logo.png`, **279 KB**) se carga 3 veces por página; con `next/image` bajaría a ~20–40 KB por carga. `priority` solo para el del hero; el resto `lazy`. |
 | P3-2 | **`width`/`height` explícitos en imágenes** | Ningún `<img>` los declara. Añadirlos (o dejar que `next/image` los exija) elimina el riesgo de cambios de diseño (CLS). |
-| P3-3 | **Eliminar la llamada a Supabase en visitas anónimas** | `page.tsx:102-111` llama `supabase.auth.getUser()` (ida y vuelta a Supabase) en **cada** visita pública, solo para cambiar "Iniciar sesión" por "Ingresar". Pero `/login` ya redirige a autenticados a `/dashboard` (el propio comentario del archivo lo dice): la distinción es cosmética y cuesta TTFB. Proponer: quitar la llamada o degradarla a una comprobación local de cookie. Además el middleware (`src/middleware.ts`) también llama a `getUser()` en `/` — se puede excluir la ruta pública del matcher. |
+| P3-3 | **Eliminar la llamada a Supabase en visitas anónimas** | `page.tsx:113-122` llama `supabase.auth.getUser()` (ida y vuelta a Supabase) en **cada** visita pública, solo para cambiar "Iniciar sesión" por "Ingresar". Pero `/login` ya redirige a autenticados a `/dashboard` (el propio comentario del archivo lo dice): la distinción es cosmética y cuesta TTFB. Proponer: quitar la llamada o degradarla a una comprobación local de cookie. Además el middleware (`src/middleware.ts`) también llama a `getUser()` en `/` — se puede excluir la ruta pública del matcher. |
 | P3-4 | **Favicon más ligero** | `src/app/icon.ico` pesa **124 KB**. Generar un .ico de 32×32 + `apple-touch-icon.png` de 180×180 (unos pocos KB). |
 | P3-5 | **Caché del HTML de `/`** | `next.config.ts` manda `Cache-Control: private, no-store` a **todo** el HTML, incluida la landing. Fue una decisión deliberada por el CDN de Hostinger (documentada en el propio archivo) — proponer con cuidado: excluir `/` con una cabecera conservadora tipo `public, max-age=0, s-maxage=300, stale-while-revalidate=60` y vigilar el comportamiento del CDN. Requiere tu visto bueno por el historial de problemas con Hostinger. |
 | P3-6 | **Foto real en el hero** (opcional) | El hero usa solo el logo. Una foto real de trabajo/estudio aumenta la tasa de clics desde resultados y la permanencia. |
@@ -238,11 +249,11 @@ Google no sabe que esto es un negocio de belleza. Añadir en el servidor de `src
 ## 4. Información pendiente que necesito de ti
 
 1. ✅ **Ciudad y zona de servicio** — confirmado 2026-10-25: **Pereira, Risaralda**; dirección física del estudio: **Cl 1 # 12-18**. Ya aplicado fuera del plan: sección "Ubicación" con mapa embebido de Google Maps y botón "Cómo llegar" en la landing (`src/app/page.tsx`). Con esto, P1-4 puede usar `streetAddress: "Calle 1 # 12-18"`, `addressLocality: "Pereira"`, `addressRegion: "Risaralda"` y P2-2 queda parcialmente cubierto.
-2. **Horarios de atención** (P1-4).
+2. ✅ **Horarios de atención** — confirmado 2026-11-08: **lunes a sábado de 9:00 a. m. a 6:00 p. m.**; **no se atiende domingos ni festivos**. Ya reflejado en P1-4 (`openingHoursSpecification`) y en la FAQ de P2-4.
 3. ¿Ya existe **Google Business Profile** de Luzdy Jiménez? (P4).
 4. Aprobación específica del cambio de **caché para `/`** (P3-5), por el historial con el CDN de Hostinger.
 
-✅ Ya confirmado: dominio `https://luzdy.beauty` (`NEXT_PUBLIC_SITE_URL`, `.env:51`) · idioma `es` (`NEXT_PUBLIC_APP_LOCALE`, `.env:56`) · texto de la description de es.json (P1-1) · ciudad Pereira (Risaralda) y dirección Cl 1 # 12-18 (2026-10-25).
+✅ Ya confirmado: dominio `https://luzdy.beauty` (`NEXT_PUBLIC_SITE_URL`, `.env:51`) · idioma `es` (`NEXT_PUBLIC_APP_LOCALE`, `.env:56`) · texto de la description de es.json (P1-1) · ciudad Pereira (Risaralda) y dirección Cl 1 # 12-18 (2026-10-25) · horarios lunes–sábado 9:00–18:00, sin domingos ni festivos (2026-11-08).
 
 ---
 
