@@ -389,7 +389,9 @@
       "clearSelection": "Limpar",
       "deleteSelected": "Excluir selecionados",
       "tableColumns": {
+        "identification": "Identificação",
         "name": "Nome",
+        "lastName": "Sobrenome",
         "phone": "Telefone",
         "email": "E-mail",
         "company": "Empresa",
@@ -592,7 +594,8 @@
       "structureHint": "A primeira linha são os cabeçalhos exatamente como listados (sem acentos). Linhas sem identificação, nome ou sobrenome são ignoradas; duplicados por identificação ou celular nunca são registrados.",
       "resultMissingRequired": "{count} linha(s) ignorada(s): falta identificação, nome ou sobrenome",
       "missingRequiredHint": "Esses três campos correspondem ao formulário de cliente da agenda e são obrigatórios em cada linha.",
-      "toastMissingRequired": "{count} linha(s) sem campos obrigatórios"
+      "toastMissingRequired": "{count} linha(s) sem campos obrigatórios",
+      "missingColumns": "O arquivo não tem a coluna de identificação (identification ou identificacion)."
     },
     "customFields": {
       "title": "Campos personalizados",
@@ -611,10 +614,6 @@
       "toastRenameFailed": "Não foi possível renomear o campo.",
       "toastDeleteFailed": "Não foi possível excluir o campo.",
       "toastDeleted": "\"{name}\" excluído."
-    },
-    "tableColumns": {
-      "identification": "Identificação",
-      "lastName": "Sobrenome"
     }
   },
   "Pipelines": {
@@ -1987,7 +1986,15 @@
       "save": "Salvar",
       "saving": "Salvando...",
       "saveFailed": "Falha ao salvar a moeda padrão",
-      "saveSuccess": "Moeda padrão atualizada"
+      "saveSuccess": "Moeda padrão atualizada",
+      "identityTitle": "Identidade do negócio",
+      "identityDesc": "O nome com o seu negócio se apresenta às clientes. Usado nas mensagens de WhatsApp do histórico da agenda em vez do nome da conta.",
+      "titleLabel": "Título",
+      "titlePlaceholder": "Luzdy Jiménez",
+      "subtitleLabel": "Subtítulo",
+      "subtitlePlaceholder": "Especialista em Sobrancelhas e Beleza",
+      "identitySaveFailed": "Falha ao salvar a identidade do negócio",
+      "identitySaveSuccess": "Identidade do negócio atualizada"
     },
     "aiConfig": {
       "title": "Configuração do agente",

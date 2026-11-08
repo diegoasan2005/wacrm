@@ -33,6 +33,18 @@ WhatsApp/Instagram.
   especialista" block introduces Luzdy with a portrait and short bio.
   New photos only require dropping the file into `public/` and adding
   one entry to the gallery list.
+- **Business identity in settings.** "Negocios y moneda" gains an
+  "Identidad del negocio" card (title + subtitle, e.g. "Luzdy
+  Jiménez" / "Especialista en Cejas y Belleza") stored on the
+  account. The agenda-history WhatsApp reminder/invitation templates
+  now use that title as the business name instead of falling back to
+  the account name (which is usually the owner's personal name).
+  Empty title keeps the old account-name behavior.
+
+> **Migration required:** apply
+> `supabase/migrations/057_account_business_identity.sql`
+> (adds nullable `business_title` / `business_subtitle` columns to
+> `accounts`) before using the new card.
 
 ### Changed
 
@@ -47,6 +59,16 @@ WhatsApp/Instagram.
   180×180 `apple-icon.png` was added.
 - **Root metadata descriptions no longer say "Luzdy CRM"** — all four
   locales now carry the brand description.
+
+### Fixed
+
+- **Contacts table headers showing raw translation keys.** The
+  identification and last-name column labels shipped under the wrong
+  i18n namespace (`Contacts.tableColumns` instead of
+  `Contacts.page.tableColumns`), so the table rendered
+  `Contacts.page.tableColumns.identification` verbatim. The keys now
+  live where the page reads them in all four locales, and the CSV
+  import toast gained its missing `missingColumns` message.
 
 ## [0.8.1] — 2026-07-10
 

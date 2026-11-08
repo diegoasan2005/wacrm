@@ -389,7 +389,9 @@
       "clearSelection": "Clear",
       "deleteSelected": "Delete selected",
       "tableColumns": {
+        "identification": "ID number",
         "name": "Name",
+        "lastName": "Last name",
         "phone": "Phone",
         "email": "Email",
         "company": "Company",
@@ -592,7 +594,8 @@
       "structureHint": "First row = headers exactly as listed (accent-less). Rows missing identification, nombre or apellido are skipped; duplicates by identification or phone are never registered.",
       "resultMissingRequired": "{count} row(s) skipped: missing identification, nombre or apellido",
       "missingRequiredHint": "These three fields mirror the agenda's client form and are required in every row.",
-      "toastMissingRequired": "{count} row(s) missing required fields"
+      "toastMissingRequired": "{count} row(s) missing required fields",
+      "missingColumns": "The file is missing the identification column (identification or identificacion)."
     },
     "customFields": {
       "title": "Custom fields",
@@ -611,10 +614,6 @@
       "toastRenameFailed": "Could not rename field.",
       "toastDeleteFailed": "Could not delete field.",
       "toastDeleted": "Deleted \"{name}\"."
-    },
-    "tableColumns": {
-      "identification": "ID number",
-      "lastName": "Last name"
     }
   },
   "Pipelines": {
@@ -1987,7 +1986,15 @@
       "save": "Save",
       "saving": "Saving...",
       "saveFailed": "Failed to save default currency",
-      "saveSuccess": "Default currency updated"
+      "saveSuccess": "Default currency updated",
+      "identityTitle": "Business identity",
+      "identityDesc": "The name your business presents to customers. Used in agenda-history WhatsApp messages instead of the account name.",
+      "titleLabel": "Title",
+      "titlePlaceholder": "Luzdy Jiménez",
+      "subtitleLabel": "Subtitle",
+      "subtitlePlaceholder": "Eyebrow & Beauty Specialist",
+      "identitySaveFailed": "Failed to save the business identity",
+      "identitySaveSuccess": "Business identity updated"
     },
     "aiConfig": {
       "title": "Agent setup",

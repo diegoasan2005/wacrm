@@ -389,7 +389,9 @@
       "clearSelection": "Limpiar",
       "deleteSelected": "Eliminar seleccionados",
       "tableColumns": {
+        "identification": "Identificación",
         "name": "Nombre",
+        "lastName": "Apellido",
         "phone": "Teléfono",
         "email": "Correo",
         "company": "Empresa",
@@ -592,7 +594,8 @@
       "structureHint": "La primera fila son los encabezados exactamente como se listan (sin tildes). Las filas sin identificacion, nombre o apellido se omiten; los duplicados por identificacion o celular nunca se registran.",
       "resultMissingRequired": "{count} fila(s) omitida(s): falta identificacion, nombre o apellido",
       "missingRequiredHint": "Estos tres campos corresponden al formulario de cliente de la agenda y son obligatorios en cada fila.",
-      "toastMissingRequired": "{count} fila(s) sin campos obligatorios"
+      "toastMissingRequired": "{count} fila(s) sin campos obligatorios",
+      "missingColumns": "El archivo no tiene la columna de identificación (identification o identificacion)."
     },
     "customFields": {
       "title": "Campos personalizados",
@@ -611,10 +614,6 @@
       "toastRenameFailed": "No se pudo renombrar el campo.",
       "toastDeleteFailed": "No se pudo eliminar el campo.",
       "toastDeleted": "\"{name}\" eliminado."
-    },
-    "tableColumns": {
-      "identification": "Identificación",
-      "lastName": "Apellido"
     }
   },
   "Pipelines": {
@@ -1987,7 +1986,15 @@
       "save": "Guardar",
       "saving": "Guardando...",
       "saveFailed": "Error al guardar la moneda predeterminada",
-      "saveSuccess": "Moneda predeterminada actualizada"
+      "saveSuccess": "Moneda predeterminada actualizada",
+      "identityTitle": "Identidad del negocio",
+      "identityDesc": "El nombre con el que se presenta tu negocio a las clientas. Se usa en los mensajes de WhatsApp del historial de agenda en lugar del nombre de la cuenta.",
+      "titleLabel": "Título",
+      "titlePlaceholder": "Luzdy Jiménez",
+      "subtitleLabel": "Subtítulo",
+      "subtitlePlaceholder": "Especialista en Cejas y Belleza",
+      "identitySaveFailed": "Error al guardar la identidad del negocio",
+      "identitySaveSuccess": "Identidad del negocio actualizada"
     },
     "aiConfig": {
       "title": "Configuración del agente",

@@ -389,7 +389,9 @@
       "clearSelection": "지우기",
       "deleteSelected": "선택 항목 삭제",
       "tableColumns": {
+        "identification": "신분증",
         "name": "이름",
+        "lastName": "성",
         "phone": "전화번호",
         "email": "이메일",
         "company": "회사",
@@ -592,7 +594,8 @@
       "structureHint": "첫 행은 나열된 그대로의 헤더여야 합니다(액센트 없음). identificación, nombre, apellido가 없는 행은 생략되며, 신분증 또는 전화번호 중복은 등록되지 않습니다.",
       "resultMissingRequired": "{count}개 행 생략: identificación, nombre 또는 apellido 누락",
       "missingRequiredHint": "이 세 필드는 아젠다의 고객 양식과 동일하며 각 행에 필수입니다.",
-      "toastMissingRequired": "{count}개 행에 필수 필드가 없습니다"
+      "toastMissingRequired": "{count}개 행에 필수 필드가 없습니다",
+      "missingColumns": "파일에 식별 번호(identificación) 열이 없습니다."
     },
     "customFields": {
       "title": "커스텀 필드",
@@ -611,10 +614,6 @@
       "toastRenameFailed": "필드 이름을 변경할 수 없습니다.",
       "toastDeleteFailed": "필드를 삭제할 수 없습니다.",
       "toastDeleted": "\"{name}\"을(를) 삭제했습니다."
-    },
-    "tableColumns": {
-      "identification": "신분증",
-      "lastName": "성"
     }
   },
   "Pipelines": {
@@ -1987,7 +1986,15 @@
       "save": "저장",
       "saving": "저장 중...",
       "saveFailed": "기본 통화를 저장하지 못했습니다",
-      "saveSuccess": "기본 통화가 업데이트되었습니다"
+      "saveSuccess": "기본 통화가 업데이트되었습니다",
+      "identityTitle": "비즈니스 아이덴티티",
+      "identityDesc": "고객에게 비즈니스를 소개하는 이름입니다. 계정 이름 대신 일정 기록 WhatsApp 메시지에 사용됩니다.",
+      "titleLabel": "제목",
+      "titlePlaceholder": "Luzdy Jiménez",
+      "subtitleLabel": "부제목",
+      "subtitlePlaceholder": "눈썹 및 뷰티 전문가",
+      "identitySaveFailed": "비즈니스 아이덴티티를 저장하지 못했습니다",
+      "identitySaveSuccess": "비즈니스 아이덴티티가 업데이트되었습니다"
     },
     "aiConfig": {
       "title": "에이전트 설정",
