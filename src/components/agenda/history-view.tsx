@@ -11,7 +11,7 @@
 // contact was last contacted.
 // ============================================================
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -38,10 +38,13 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  SortableTableHead,
+  type SortDir,
+} from '@/components/ui/sortable-table-head';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { fetchAccountMembers, memberLabel } from '@/lib/account/members';
@@ -75,6 +78,48 @@ interface HistoryRow {
 }
 
 const MIN_DAYS_OPTIONS = [0, 7, 15, 30, 60, 90, 180, 365];
+
+// Ordenamiento por clic en el encabezado: primer clic ascendente,
+// segundo descendente, tercero vuelve al orden del servidor.
+type SortKey =
+  | 'identification'
+  | 'client'
+  | 'lastVisit'
+  | 'days'
+  | 'status'
+  | 'specialist'
+  | 'phone'
+  | 'next'
+  | 'sent';
+
+interface SortState {
+  key: SortKey;
+  dir: SortDir;
+}
+
+function SortableHead({
+  label,
+  sortKey,
+  sort,
+  onToggle,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: SortState | null;
+  onToggle: (key: SortKey) => void;
+  className?: string;
+}) {
+  const dir: SortDir | null = sort?.key === sortKey ? sort.dir : null;
+  return (
+    <SortableTableHead
+      label={label}
+      dir={dir}
+      onToggle={() => onToggle(sortKey)}
+      className={className}
+    />
+  );
+}
 
 function formatVisitDate(iso: string, tz: string): string {
   const date = new Date(
@@ -125,6 +170,7 @@ export function HistoryView() {
   const [services, setServices] = useState<AppointmentService[]>([]);
   const [members, setMembers] = useState<AccountMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sort, setSort] = useState<SortState | null>(null);
 
   const [search, setSearch] = useState('');
   const [serviceFilter, setServiceFilter] = useState('');
@@ -205,6 +251,61 @@ export function HistoryView() {
     },
     [members]
   );
+
+  function toggleSort(key: SortKey) {
+    setSort((cur) => {
+      if (!cur || cur.key !== key) return { key, dir: 'asc' };
+      if (cur.dir === 'asc') return { key, dir: 'desc' };
+      return null;
+    });
+  }
+
+  // Valor de orden por columna; null = sin dato (siempre al final).
+  function sortValue(row: HistoryRow, key: SortKey): string | number | null {
+    switch (key) {
+      case 'identification':
+        return row.identification;
+      case 'client':
+        return row.name || null;
+      case 'lastVisit':
+        return row.last_visit?.starts_at ?? null;
+      case 'days':
+        return row.days_since;
+      case 'status':
+        return row.last_visit?.status ?? null;
+      case 'specialist':
+        return row.last_visit
+          ? specialistName(row.last_visit.specialist)
+          : null;
+      case 'phone':
+        return row.phone || null;
+      case 'next':
+        return row.next?.starts_at ?? null;
+      case 'sent':
+        return row.last_reminder_at ?? row.last_invitation_at ?? null;
+    }
+  }
+
+  const visibleRows = useMemo(() => {
+    if (!sort) return rows;
+    const { key, dir } = sort;
+    const factor = dir === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = sortValue(a, key);
+      const bv = sortValue(b, key);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      if (typeof av === 'number' && typeof bv === 'number')
+        return (av - bv) * factor;
+      const cmp = String(av).localeCompare(String(bv), undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      });
+      return cmp * factor;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sortValue cierra sobre specialistName (members)
+  }, [rows, sort, specialistName]);
 
   function buildMessage(
     row: HistoryRow,
@@ -391,33 +492,62 @@ export function HistoryView() {
         <Table>
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="text-muted-foreground">
-                {t('table.identification')}
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {t('table.client')}
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {t('table.lastVisit')}
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {t('table.days')}
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {t('table.status')}
-              </TableHead>
-              <TableHead className="text-muted-foreground hidden md:table-cell">
-                {t('table.specialist')}
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {t('table.phone')}
-              </TableHead>
-              <TableHead className="text-muted-foreground">
-                {t('table.next')}
-              </TableHead>
-              <TableHead className="text-muted-foreground hidden lg:table-cell">
-                {t('table.sent')}
-              </TableHead>
+              <SortableHead
+                label={t('table.identification')}
+                sortKey="identification"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableHead
+                label={t('table.client')}
+                sortKey="client"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableHead
+                label={t('table.lastVisit')}
+                sortKey="lastVisit"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableHead
+                label={t('table.days')}
+                sortKey="days"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableHead
+                label={t('table.status')}
+                sortKey="status"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableHead
+                label={t('table.specialist')}
+                sortKey="specialist"
+                sort={sort}
+                onToggle={toggleSort}
+                className="hidden md:table-cell"
+              />
+              <SortableHead
+                label={t('table.phone')}
+                sortKey="phone"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableHead
+                label={t('table.next')}
+                sortKey="next"
+                sort={sort}
+                onToggle={toggleSort}
+              />
+              <SortableHead
+                label={t('table.sent')}
+                sortKey="sent"
+                sort={sort}
+                onToggle={toggleSort}
+                className="hidden lg:table-cell"
+              />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -437,7 +567,7 @@ export function HistoryView() {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row) => (
+              visibleRows.map((row) => (
                 <TableRow
                   key={row.contact_id}
                   className="border-border hover:bg-muted/50"

@@ -56,12 +56,34 @@ import { ImportModal } from '@/components/contacts/import-modal';
 import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager';
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
+import {
+  SortableTableHead,
+  type SortDir,
+} from '@/components/ui/sortable-table-head';
 import { useTranslations } from 'next-intl';
 
 const PAGE_SIZE = 25;
 
 interface ContactWithTags extends Contact {
   tags?: Tag[];
+}
+
+// Columnas ordenables desde los encabezados; en la ruta sin filtro de
+// etiquetas mapean directo a columnas de contacts y en la ruta del RPC
+// las valida la whitelist del CASE (058_contact_sort_options). Las
+// etiquetas no son ordenables (tabla puente, no columna).
+type ContactSortColumn =
+  | 'identification'
+  | 'name'
+  | 'last_name'
+  | 'phone'
+  | 'email'
+  | 'company'
+  | 'created_at';
+
+interface ContactSortState {
+  col: ContactSortColumn;
+  dir: SortDir;
 }
 
 export default function ContactsPage() {
@@ -76,6 +98,11 @@ export default function ContactsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  // Orden por defecto: creación descendente (el histórico de la lista).
+  const [sort, setSort] = useState<ContactSortState>({
+    col: 'created_at',
+    dir: 'desc',
+  });
   // Tag filter â€” contacts shown must have ANY of these tags (OR).
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
@@ -135,15 +162,18 @@ export default function ContactsPage() {
     let count: number;
 
     if (selectedTagIds.length > 0) {
-      // Tag filter active â€” resolve it server-side (join + distinct +
+      // Tag filter active — resolve it server-side (join + distinct +
       // windowed total count + pagination) so a tag covering many
       // contacts can't silently truncate the result or overflow an IN
-      // clause. See migration 025_filter_contacts_by_tags.
+      // clause. See migration 025_filter_contacts_by_tags (sort params
+      // added in 058_contact_sort_options).
       const { data, error } = await supabase.rpc('filter_contacts_by_tags', {
         p_tag_ids: selectedTagIds,
         p_search: term || null,
         p_limit: PAGE_SIZE,
         p_offset: from,
+        p_sort_column: sort.col,
+        p_sort_dir: sort.dir,
       });
       if (seq !== fetchSeq.current) return; // superseded by a newer fetch
       if (error) {
@@ -158,8 +188,10 @@ export default function ContactsPage() {
       let query = supabase
         .from('contacts')
         .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(from, to);
+        .order(sort.col, { ascending: sort.dir === 'asc', nullsFirst: false })
+        // Pagination tiebreaker — keeps pages stable when the sort
+        // column has duplicate values.
+        .order('id', { ascending: true });
 
       if (term) {
         const like = `%${term}%`;
@@ -167,6 +199,8 @@ export default function ContactsPage() {
           `name.ilike.${like},last_name.ilike.${like},identification.ilike.${like},phone.ilike.${like},email.ilike.${like}`
         );
       }
+
+      query = query.range(from, to);
 
       const { data, count: exactCount, error } = await query;
       if (seq !== fetchSeq.current) return; // superseded by a newer fetch
@@ -210,7 +244,7 @@ export default function ContactsPage() {
 
     setContacts(enriched);
     setLoading(false);
-  }, [supabase, page, search, selectedTagIds, tagsMap, t]);
+  }, [supabase, page, search, selectedTagIds, tagsMap, sort, t]);
 
   // Load-once-on-mount-ish data fetches. Each setter inside runs
   // inside an async promise completion (Supabase await), not
@@ -225,6 +259,19 @@ export default function ContactsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchContacts();
   }, [fetchContacts]);
+
+  // Ciclo del encabezado: asc → desc → orden por defecto (creación
+  // descendente). Cambiar el orden vuelve a la primera página.
+  function toggleContactSort(col: ContactSortColumn) {
+    setSort((cur) =>
+      cur.col === col
+        ? cur.dir === 'asc'
+          ? { col, dir: 'desc' }
+          : { col: 'created_at', dir: 'desc' }
+        : { col, dir: 'asc' }
+    );
+    setPage(0);
+  }
 
   function openAddForm() {
     setEditContact(null);
@@ -326,7 +373,8 @@ export default function ContactsPage() {
   const allTags = Object.values(tagsMap).sort((a, b) =>
     a.name.localeCompare(b.name)
   );
-  const hasActiveFilters = search.trim().length > 0 || selectedTagIds.length > 0;
+  const hasActiveFilters =
+    search.trim().length > 0 || selectedTagIds.length > 0;
 
   function toggleTagFilter(tagId: string) {
     setSelectedTagIds((prev) =>
@@ -345,11 +393,13 @@ export default function ContactsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {totalCount > 0 ? t('subtitle', { count: totalCount }) : t('subtitleZero')}
+          <h1 className="text-foreground text-2xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {totalCount > 0
+              ? t('subtitle', { count: totalCount })
+              : t('subtitleZero')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -387,9 +437,9 @@ export default function ContactsPage() {
 
       {/* Search + tag filter */}
       <div className="space-y-2">
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
             <Input
               value={search}
               onChange={(e) => {
@@ -399,7 +449,7 @@ export default function ContactsPage() {
                 setPage(0);
               }}
               placeholder={t('searchPlaceholder')}
-              className="pl-8 bg-card border-border text-foreground placeholder:text-muted-foreground"
+              className="bg-card border-border text-foreground placeholder:text-muted-foreground pl-8"
             />
           </div>
 
@@ -415,27 +465,27 @@ export default function ContactsPage() {
               <Filter className="size-4" />
               {t('filterByTags')}
               {selectedTagIds.length > 0 && (
-                <span className="ml-1 inline-flex items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                <span className="bg-primary text-primary-foreground ml-1 inline-flex items-center justify-center rounded-full px-1.5 text-[10px] font-semibold">
                   {selectedTagIds.length}
                 </span>
               )}
             </PopoverTrigger>
             <PopoverContent align="start" className="w-64 p-0">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-                <span className="text-sm font-medium text-popover-foreground">
+              <div className="border-border flex items-center justify-between border-b px-3 py-2">
+                <span className="text-popover-foreground text-sm font-medium">
                   {t('filterByTags')}
                 </span>
                 {selectedTagIds.length > 0 && (
                   <button
                     onClick={clearTagFilters}
-                    className="text-xs text-muted-foreground hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground text-xs"
                   >
                     {t('clearAll')}
                   </button>
                 )}
               </div>
               {allTags.length === 0 ? (
-                <p className="px-3 py-4 text-sm text-muted-foreground text-center">
+                <p className="text-muted-foreground px-3 py-4 text-center text-sm">
                   {t('noTagsYet')}
                 </p>
               ) : (
@@ -443,7 +493,7 @@ export default function ContactsPage() {
                   {allTags.map((tag) => (
                     <label
                       key={tag.id}
-                      className="flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/50"
+                      className="hover:bg-muted/50 flex cursor-pointer items-center gap-2.5 px-3 py-1.5"
                     >
                       <Checkbox
                         checked={selectedTagIds.includes(tag.id)}
@@ -454,7 +504,7 @@ export default function ContactsPage() {
                         className="size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: tag.color }}
                       />
-                      <span className="text-sm text-popover-foreground truncate">
+                      <span className="text-popover-foreground truncate text-sm">
                         {tag.name}
                       </span>
                     </label>
@@ -493,7 +543,7 @@ export default function ContactsPage() {
             })}
             <button
               onClick={clearTagFilters}
-              className="text-xs text-muted-foreground hover:text-foreground px-1"
+              className="text-muted-foreground hover:text-foreground px-1 text-xs"
             >
               {t('clearAll')}
             </button>
@@ -503,8 +553,8 @@ export default function ContactsPage() {
 
       {/* Bulk action bar */}
       {selected.size > 0 && (
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 px-4 py-2">
-          <p className="text-sm text-foreground">
+        <div className="border-border bg-muted/40 flex items-center justify-between gap-4 rounded-lg border px-4 py-2">
+          <p className="text-foreground text-sm">
             {t('selectedCount', { count: selected.size })}
           </p>
           <div className="flex items-center gap-2">
@@ -531,7 +581,7 @@ export default function ContactsPage() {
       )}
 
       {/* Table */}
-      <div className="rounded-lg border border-border overflow-hidden">
+      <div className="border-border overflow-hidden rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
@@ -544,33 +594,69 @@ export default function ContactsPage() {
                   aria-label={t('selectAllOnPage')}
                 />
               </TableHead>
-              <TableHead className="text-muted-foreground">{t('tableColumns.identification')}</TableHead>
-              <TableHead className="text-muted-foreground">{t('tableColumns.name')}</TableHead>
-              <TableHead className="text-muted-foreground hidden sm:table-cell">{t('tableColumns.lastName')}</TableHead>
-              <TableHead className="text-muted-foreground">{t('tableColumns.phone')}</TableHead>
-              <TableHead className="text-muted-foreground hidden md:table-cell">{t('tableColumns.email')}</TableHead>
-              <TableHead className="text-muted-foreground hidden lg:table-cell">{t('tableColumns.company')}</TableHead>
-              <TableHead className="text-muted-foreground hidden md:table-cell">{t('tableColumns.tags')}</TableHead>
-              <TableHead className="text-muted-foreground hidden lg:table-cell">{t('tableColumns.createdAt')}</TableHead>
+              <SortableTableHead
+                label={t('tableColumns.identification')}
+                dir={sort.col === 'identification' ? sort.dir : null}
+                onToggle={() => toggleContactSort('identification')}
+              />
+              <SortableTableHead
+                label={t('tableColumns.name')}
+                dir={sort.col === 'name' ? sort.dir : null}
+                onToggle={() => toggleContactSort('name')}
+              />
+              <SortableTableHead
+                label={t('tableColumns.lastName')}
+                dir={sort.col === 'last_name' ? sort.dir : null}
+                onToggle={() => toggleContactSort('last_name')}
+                className="hidden sm:table-cell"
+              />
+              <SortableTableHead
+                label={t('tableColumns.phone')}
+                dir={sort.col === 'phone' ? sort.dir : null}
+                onToggle={() => toggleContactSort('phone')}
+              />
+              <SortableTableHead
+                label={t('tableColumns.email')}
+                dir={sort.col === 'email' ? sort.dir : null}
+                onToggle={() => toggleContactSort('email')}
+                className="hidden md:table-cell"
+              />
+              <SortableTableHead
+                label={t('tableColumns.company')}
+                dir={sort.col === 'company' ? sort.dir : null}
+                onToggle={() => toggleContactSort('company')}
+                className="hidden lg:table-cell"
+              />
+              <TableHead className="text-muted-foreground hidden md:table-cell">
+                {t('tableColumns.tags')}
+              </TableHead>
+              <SortableTableHead
+                label={t('tableColumns.createdAt')}
+                dir={sort.col === 'created_at' ? sort.dir : null}
+                onToggle={() => toggleContactSort('created_at')}
+                className="hidden lg:table-cell"
+              />
               <TableHead className="text-muted-foreground w-12" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow className="border-border">
-                <TableCell colSpan={10} className="text-center py-12">
+                <TableCell colSpan={10} className="py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="size-6 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">{t('loading')}</p>
+                    <Loader2 className="text-primary size-6 animate-spin" />
+                    <p className="text-muted-foreground text-sm">
+                      {t('loading')}
+                    </p>
                   </div>
                 </TableCell>
               </TableRow>
             ) : contacts.length === 0 ? (
               <TableRow className="border-border">
-                <TableCell colSpan={10} className="text-center py-12">
+                <TableCell colSpan={10} className="py-12 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <Users className="size-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
+                    <Users className="text-muted-foreground size-8" />
+                    <p className="text-muted-foreground text-sm">
                       {hasActiveFilters
                         ? t('noContactsMatch')
                         : t('noContactsYet')}
@@ -582,7 +668,7 @@ export default function ContactsPage() {
                         variant="outline"
                         size="sm"
                         onClick={openAddForm}
-                        className="mt-2 border-border text-muted-foreground hover:bg-muted"
+                        className="border-border text-muted-foreground hover:bg-muted mt-2"
                       >
                         <Plus className="size-3.5" />
                         {t('addFirstContact')}
@@ -602,26 +688,40 @@ export default function ContactsPage() {
                     <Checkbox
                       checked={selected.has(contact.id)}
                       onCheckedChange={() => toggleSelect(contact.id)}
-                      aria-label={t('selectContact', { name: contact.name || contact.phone })}
+                      aria-label={t('selectContact', {
+                        name: contact.name || contact.phone,
+                      })}
                     />
                   </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs">
-                    {contact.identification || <span className="text-muted-foreground">â€”</span>}
+                    {contact.identification || (
+                      <span className="text-muted-foreground">â€”</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-foreground font-medium">
-                    {contact.name || <span className="text-muted-foreground italic">{t('unnamed')}</span>}
+                    {contact.name || (
+                      <span className="text-muted-foreground italic">
+                        {t('unnamed')}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-muted-foreground hidden sm:table-cell">
-                    {contact.last_name || <span className="text-muted-foreground">â€”</span>}
+                    {contact.last_name || (
+                      <span className="text-muted-foreground">â€”</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-xs">
                     {contact.phone}
                   </TableCell>
-                  <TableCell className="text-muted-foreground hidden md:table-cell text-sm">
-                    {contact.email || <span className="text-muted-foreground">-</span>}
+                  <TableCell className="text-muted-foreground hidden text-sm md:table-cell">
+                    {contact.email || (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
-                  <TableCell className="text-muted-foreground hidden lg:table-cell text-sm">
-                    {contact.company || <span className="text-muted-foreground">-</span>}
+                  <TableCell className="text-muted-foreground hidden text-sm lg:table-cell">
+                    {contact.company || (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
@@ -642,13 +742,13 @@ export default function ContactsPage() {
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                       {contact.tags && contact.tags.length > 3 && (
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-muted-foreground text-[10px]">
                           +{contact.tags.length - 3}
                         </span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs hidden lg:table-cell">
+                  <TableCell className="text-muted-foreground hidden text-xs lg:table-cell">
                     {new Date(contact.created_at).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -707,11 +807,11 @@ export default function ContactsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             {t('showingPagination', {
               start: page * PAGE_SIZE + 1,
               end: Math.min((page + 1) * PAGE_SIZE, totalCount),
-              total: totalCount
+              total: totalCount,
             })}
           </p>
           <div className="flex items-center gap-1">
@@ -724,7 +824,7 @@ export default function ContactsPage() {
             >
               <ChevronLeft className="size-4" />
             </Button>
-            <span className="text-xs text-muted-foreground px-2">
+            <span className="text-muted-foreground px-2 text-xs">
               {t('pageCount', { page: page + 1, total: totalPages })}
             </span>
             <Button
@@ -783,9 +883,13 @@ export default function ContactsPage() {
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent className="bg-popover border-border text-popover-foreground sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-popover-foreground">{t('deleteContactTitle')}</DialogTitle>
+            <DialogTitle className="text-popover-foreground">
+              {t('deleteContactTitle')}
+            </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              {t('deleteContactDesc', { name: deleteTarget?.name || deleteTarget?.phone || '' })}
+              {t('deleteContactDesc', {
+                name: deleteTarget?.name || deleteTarget?.phone || '',
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="bg-popover border-border">

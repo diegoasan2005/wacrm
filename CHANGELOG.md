@@ -40,6 +40,25 @@ WhatsApp/Instagram.
   now use that title as the business name instead of falling back to
   the account name (which is usually the owner's personal name).
   Empty title keeps the old account-name behavior.
+- **Sortable agenda-history table.** Every column header (ID, client,
+  last visit, days, status, specialist, phone, next appointment, sent)
+  is now clickable: first click sorts ascending, second descending,
+  third restores the server order. Rows without a value always sort
+  last, and the active column shows a direction arrow.
+- **Sortable contacts table.** Click a column header (identification,
+  name, last name, phone, email, company, created) to sort the whole
+  list — ordering happens in the query, not just the visible 25-row
+  page, so pages and counts stay correct. Changing the sort returns
+  to page 1. Tags stay unsortable (bridge table, not a column). With
+  a tag filter active the new RPC sort parameters take over; without
+  it the plain query sorts client-requested.
+
+> **Migration required:** apply
+> `supabase/migrations/058_contact_sort_options.sql`
+> (replaces `filter_contacts_by_tags` with optional
+> `p_sort_column`/`p_sort_dir` parameters, defaults unchanged) for
+> sorting while a tag filter is active. Sorting without a tag filter
+> works without the migration.
 
 > **Migration required:** apply
 > `supabase/migrations/057_account_business_identity.sql`
