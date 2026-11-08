@@ -9,6 +9,45 @@ Versions follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Pre-1.0, `MINOR` bumps cover new modules; `PATCH` bumps cover bug fixes
 and polish.
 
+## [Unreleased]
+
+Makes the public landing findable on Google and shareable on
+WhatsApp/Instagram.
+
+### Added
+
+- **Landing SEO.** `/` was inheriting the app-wide `noindex` (the CRM
+  is private, but the landing is the public face), so search engines
+  couldn't index it. The landing now opts into indexing and ships
+  `robots.txt`, `sitemap.xml`, a canonical URL, Open Graph/Twitter
+  cards with a generated share image, and `BeautySalon` + `FAQPage`
+  structured data (address Cl 1 # 12-18, Pereira; hours Mon–Sat
+  9:00–18:00, closed Sundays/holidays).
+- **FAQ and visible contact info on the landing.** Schedule and a
+  `tel:` phone link next to the map, plus address/phone/hours (NAP) in
+  the footer.
+- **"Conoce el estudio" gallery.** Real photos of the storefront and
+  work of Luzdy in a collage grid with a dependency-free full-screen
+  viewer (Esc/arrows keyboard support). Every image stays in the HTML
+  —unlike a carousel— so Google Images can index them all. A "Tu
+  especialista" block introduces Luzdy with a portrait and short bio.
+  New photos only require dropping the file into `public/` and adding
+  one entry to the gallery list.
+
+### Changed
+
+- **Landing images use `next/image`** (WebP/AVIF, lazy loading,
+  responsive srcset). The 279 KB logo was shipped raw three times per
+  visit; service photos and QRs are lazy-loaded below the fold.
+- **The landing no longer calls Supabase on anonymous visits.** The
+  session check only toggled the header button label, and `/login`
+  already redirects signed-in users to `/dashboard`. Middleware also
+  skips `/`, so anonymous visits no longer pay a Supabase round-trip.
+- **Lighter icons.** `icon.ico` went from 124 KB to ~1 KB and a
+  180×180 `apple-icon.png` was added.
+- **Root metadata descriptions no longer say "Luzdy CRM"** — all four
+  locales now carry the brand description.
+
 ## [0.8.1] — 2026-07-10
 
 Fixes inbound chats fragmenting into multiple threads for the same
@@ -81,7 +120,7 @@ sidebar — it's no longer tucked inside Settings.
 - **AI Agents (sidebar).** A dedicated `/agents` area with two tabs:
   - **Playground** — a test chat to message your agent and see its
     grounded, multi-turn replies (and where it would hand off to a human)
-    *before* it ever answers a real customer. Runs the exact same path as
+    _before_ it ever answers a real customer. Runs the exact same path as
     the auto-reply bot (knowledge-base retrieval + your provider), and
     works even before you flip the master switch on, so you can try, then
     enable. Backed by `POST /api/ai/playground`.
@@ -157,7 +196,7 @@ returned to the client after saving.
 ## [0.4.0] — 2026-07-01
 
 Completes the public API (#245): **outbound event webhooks** so
-automations can *react* to activity instead of polling.
+automations can _react_ to activity instead of polling.
 
 ### Added
 
@@ -218,11 +257,11 @@ always did.
   - `POST /api/v1/broadcasts` + `GET /api/v1/broadcasts/{id}` — launch a
     template broadcast to a recipient list and poll its progress
     (`broadcasts:send`).
-  All list endpoints share one cursor-pagination contract
-  (`{ data, meta: { next_cursor } }`). No migration required — the
-  scopes already existed and the tables are unchanged. Outbound event
-  webhooks (react to inbound messages) are the remaining roadmap item.
-  See `docs/public-api.md`. ([#245](https://github.com/ArnasDon/wacrm/issues/245))
+    All list endpoints share one cursor-pagination contract
+    (`{ data, meta: { next_cursor } }`). No migration required — the
+    scopes already existed and the tables are unchanged. Outbound event
+    webhooks (react to inbound messages) are the remaining roadmap item.
+    See `docs/public-api.md`. ([#245](https://github.com/ArnasDon/wacrm/issues/245))
 
 ### Changed
 
@@ -261,8 +300,8 @@ always did.
 
 - `supabase/migrations/020_account_sharing_followups.sql` —
   composite partial indexes on `automations(account_id,
-  trigger_type) WHERE is_active` and `flows(account_id) WHERE
-  status='active'` for the engine dispatch hot path; updated
+trigger_type) WHERE is_active` and `flows(account_id) WHERE
+status='active'` for the engine dispatch hot path; updated
   `flow-media` storage RLS to allow account-member writes under
   the new path convention. Idempotent.
 
@@ -453,10 +492,10 @@ when two users on the same instance saved the same WhatsApp
 - **Inbound WhatsApp messages no longer silently disappear** when two
   users have claimed the same `phone_number_id`. Previously the
   webhook used `.single()` to look up the owning config, which errors
-  `PGRST116` for both 0 rows *and* ≥2 rows — the second user's save
+  `PGRST116` for both 0 rows _and_ ≥2 rows — the second user's save
   put the DB into the ≥2-row state and every inbound message was
-  dropped while the log misleadingly reported *"No config found for
-  phone_number_id"*. Three layers of fix: `POST /api/whatsapp/config`
+  dropped while the log misleadingly reported _"No config found for
+  phone_number_id"_. Three layers of fix: `POST /api/whatsapp/config`
   now returns **409** when another user has already claimed the
   number, the webhook lookup distinguishes 0 rows from ≥2 rows and
   logs the conflicting `user_id`s, and a new DB constraint

@@ -1,11 +1,11 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages, getTranslations } from 'next-intl/server';
-import { Inter } from "next/font/google";
-import Script from "next/script";
-import "./globals.css";
-import { ThemeProvider } from "@/hooks/use-theme";
-import { ThemedToaster } from "@/components/themed-toaster";
+import { Inter } from 'next/font/google';
+import Script from 'next/script';
+import './globals.css';
+import { ThemeProvider } from '@/hooks/use-theme';
+import { ThemedToaster } from '@/components/themed-toaster';
 import {
   DEFAULT_MODE,
   DEFAULT_THEME,
@@ -13,25 +13,30 @@ import {
   MODES,
   STORAGE_KEY,
   THEME_IDS,
-} from "@/lib/themes";
+} from '@/lib/themes';
 
 const inter = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
+  variable: '--font-sans',
+  subsets: ['latin'],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Metadata");
+  const t = await getTranslations('Metadata');
   return {
     ...metadata,
-    description: t("description"),
+    description: t('description'),
   };
 }
 
 const metadata: Metadata = {
+  // Necesario para que Next resuelva URLs absolutas (canonical, og:*)
+  // desde rutas relativas. El dominio real vive en NEXT_PUBLIC_SITE_URL.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://luzdy.beauty'
+  ),
   title: {
-    default: "Luzdy CRM",
-    template: "%s — Luzdy CRM",
+    default: 'Luzdy CRM',
+    template: '%s — Luzdy CRM',
   },
   robots: {
     index: false,
@@ -47,8 +52,8 @@ const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
-  colorScheme: "dark light",
+  themeColor: '#020617',
+  colorScheme: 'dark light',
 };
 
 // Inline boot script — runs before React hydrates so the user's
@@ -113,7 +118,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }}
         />
       </head>
-      <body className="min-h-full bg-background text-foreground font-sans">
+      <body className="bg-background text-foreground min-h-full font-sans">
         <NextIntlClientProvider messages={messages} locale={locale}>
           <ThemeProvider>
             {children}
