@@ -26,7 +26,7 @@ WhatsApp/Instagram.
 - **FAQ and visible contact info on the landing.** Schedule and a
   `tel:` phone link next to the map, plus address/phone/hours (NAP) in
   the footer.
-- **"Conoce el estudio" gallery.** Real photos of the storefront and
+- **"Conoce un espacio diseñado para ti" gallery.** Real photos of the storefront and
   work of Luzdy in a collage grid with a dependency-free full-screen
   viewer (Esc/arrows keyboard support). Every image stays in the HTML
   —unlike a carousel— so Google Images can index them all. A "Tu

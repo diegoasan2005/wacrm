@@ -385,7 +385,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== Galería / Conoce el estudio ===== */}
+      {/* ===== Galería / Conoce un espacio diseñado para ti ===== */}
       <section id="galeria" className="mx-auto max-w-6xl px-4 py-16">
         <p
           className="text-center text-xs font-semibold tracking-[0.35em] uppercase"
@@ -394,7 +394,7 @@ export default function LandingPage() {
           Galería
         </p>
         <h2 className="mt-3 text-center text-3xl font-bold sm:text-4xl">
-          Conoce el estudio
+          Conoce un espacio diseñado para ti
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-white/60 sm:text-base">
           Un espacio cómodo en Pereira y la especialista que te acompañará en
