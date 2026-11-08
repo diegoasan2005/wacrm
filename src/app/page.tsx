@@ -1,9 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
-import Link from "next/link";
-import { LogIn } from "lucide-react";
+import fs from 'node:fs';
+import path from 'node:path';
+import Link from 'next/link';
+import { LogIn, MapPin } from 'lucide-react';
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from '@/lib/supabase/server';
 
 // ============================================================
 // Landing pública — lo primero que ve cualquier visitante.
@@ -18,78 +18,89 @@ import { createClient } from "@/lib/supabase/server";
 // at build time).
 // ============================================================
 
-const BRAND = "#FC0178";
+const BRAND = '#FC0178';
+
+const ADDRESS = 'Cl 1 # 12-18, Pereira, Risaralda';
+const ADDRESS_QUERY = encodeURIComponent(ADDRESS);
+// URL final del embed oficial de Google Maps ("Compartir → Insertar un mapa")
+// para la dirección. Se usa la URL definitiva (/maps/embed?pb=...) porque la
+// variante corta google.com/maps?...&output=embed responde con pantalla gris
+// cuando se carga directamente como iframe (la redirección 301 solo funciona
+// en navegación de pestaña).
+const MAPS_EMBED_URL =
+  'https://www.google.com/maps/embed?origin=mfe&pb=!1m3!2m1!1sCl+1+%23+12-18,+Pereira,+Risaralda!6i16!3m1!1ses!5m1!1ses';
+const MAPS_DIRECTIONS_URL = `https://www.google.com/maps/dir/?api=1&destination=${ADDRESS_QUERY}`;
 
 const SERVICES = [
   {
-    slug: "depilacion-cejas",
-    name: "Depilación de Cejas con Hilo",
+    slug: 'depilacion-cejas',
+    name: 'Depilación de Cejas con Hilo',
     description:
-      "Definición y limpieza perfecta con la técnica del hilo: precisión, menos irritación y una forma que realza tu mirada.",
-    emoji: "👁️",
+      'Definición y limpieza perfecta con la técnica del hilo: precisión, menos irritación y una forma que realza tu mirada.',
+    emoji: '👁️',
   },
   {
-    slug: "manicure-pedicure",
-    name: "Manicure y Pedicure",
+    slug: 'manicure-pedicure',
+    name: 'Manicure y Pedicure',
     description:
-      "Todas las técnicas y con diseños personalizados para unas manos y pies impecables.",
-    emoji: "💅",
+      'Todas las técnicas y con diseños personalizados para unas manos y pies impecables.',
+    emoji: '💅',
   },
   {
-    slug: "micropigmentacion-cejas",
-    name: "Micropigmentación de Cejas",
+    slug: 'micropigmentacion-cejas',
+    name: 'Micropigmentación de Cejas',
     description:
-      "Cejas perfectas 24/7 con acabado natural pelo a pelo, diseñadas según tu rostro.",
-    emoji: "✨",
+      'Cejas perfectas 24/7 con acabado natural pelo a pelo, diseñadas según tu rostro.',
+    emoji: '✨',
   },
   {
-    slug: "laminado-cejas",
-    name: "Laminado de Cejas",
+    slug: 'laminado-cejas',
+    name: 'Laminado de Cejas',
     description:
-      "Peinado y fijación de tus cejas naturales para un efecto pleno y ordenado por semanas.",
-    emoji: "🪄",
+      'Peinado y fijación de tus cejas naturales para un efecto pleno y ordenado por semanas.',
+    emoji: '🪄',
   },
   {
-    slug: "revitalizacion-cejas",
-    name: "Tratamiento de Revitalización",
+    slug: 'revitalizacion-cejas',
+    name: 'Tratamiento de Revitalización',
     description:
-      "Nutrición y revitalización que fortalece y da brillo a tus cejas naturales.",
-    emoji: "🌟",
+      'Nutrición y revitalización que fortalece y da brillo a tus cejas naturales.',
+    emoji: '🌟',
   },
   {
-    slug: "micropigmentacion-labios",
-    name: "Micropigmentación de Labios",
+    slug: 'micropigmentacion-labios',
+    name: 'Micropigmentación de Labios',
     description:
-      "Color y volumen duradero con acabado natural, en armonía con tus rasgos.",
-    emoji: "💋",
+      'Color y volumen duradero con acabado natural, en armonía con tus rasgos.',
+    emoji: '💋',
   },
   {
-    slug: "hidralips",
-    name: "Hidralips",
+    slug: 'hidralips',
+    name: 'Hidralips',
     description:
-      "Hidratación profunda de labios que recupera su suavidad, volumen y color natural.",
-    emoji: "💧",
+      'Hidratación profunda de labios que recupera su suavidad, volumen y color natural.',
+    emoji: '💧',
   },
   {
-    slug: "lifting-pestanas",
-    name: "Lifting de Pestañas",
+    slug: 'lifting-pestanas',
+    name: 'Lifting de Pestañas',
     description:
-      "Curvatura y longitud de tus pestañas naturales para una mirada abierta e impactante.",
-    emoji: "🪶",
+      'Curvatura y longitud de tus pestañas naturales para una mirada abierta e impactante.',
+    emoji: '🪶',
   },
   {
-    slug: "limpieza-facial",
-    name: "Limpieza Facial",
+    slug: 'limpieza-facial',
+    name: 'Limpieza Facial',
     description:
-      "Limpieza profunda que renueva e ilumina tu piel, personalizada según su tipo.",
-    emoji: "🧖‍♀️",
+      'Limpieza profunda que renueva e ilumina tu piel, personalizada según su tipo.',
+    emoji: '🧖‍♀️',
   },
 ];
 
 function hasSampleImage(slug: string): boolean {
   try {
     return fs.existsSync(
-      path.join(process.cwd(), "public", "services", `${slug}.jpg`),
+      path.join(process.cwd(), 'public', 'services', `${slug}.jpg`)
     );
   } catch {
     return false;
@@ -128,7 +139,7 @@ export default async function LandingPage() {
             className="flex items-center gap-2 rounded-full border border-white/25 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-[#FC0178] hover:text-[#FC0178]"
           >
             <LogIn className="size-4" />
-            {isLoggedIn ? "Ingresar" : "Iniciar sesión"}
+            {isLoggedIn ? 'Ingresar' : 'Iniciar sesión'}
           </Link>
         </div>
       </header>
@@ -150,12 +161,12 @@ export default async function LandingPage() {
             className="mx-auto mb-8 h-28 w-auto sm:h-36"
           />
           <p
-            className="text-xs font-semibold uppercase tracking-[0.35em]"
+            className="text-xs font-semibold tracking-[0.35em] uppercase"
             style={{ color: BRAND }}
           >
             Especialista en Cejas y Belleza
           </p>
-          <h1 className="mt-4 text-4xl font-bold leading-tight sm:text-6xl">
+          <h1 className="mt-4 text-4xl leading-tight font-bold sm:text-6xl">
             Realza tu belleza
             <span className="block" style={{ color: BRAND }}>
               natural
@@ -189,7 +200,7 @@ export default async function LandingPage() {
       {/* ===== Servicios ===== */}
       <section id="servicios" className="mx-auto max-w-6xl px-4 py-16">
         <p
-          className="text-center text-xs font-semibold uppercase tracking-[0.35em]"
+          className="text-center text-xs font-semibold tracking-[0.35em] uppercase"
           style={{ color: BRAND }}
         >
           Nuestros servicios
@@ -232,7 +243,10 @@ export default async function LandingPage() {
                   </div>
                 )}
                 <div className="p-5">
-                  <h3 className="text-base font-semibold" style={{ color: BRAND }}>
+                  <h3
+                    className="text-base font-semibold"
+                    style={{ color: BRAND }}
+                  >
                     {service.name}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-white/65">
@@ -317,6 +331,46 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ===== Ubicación ===== */}
+      <section id="ubicacion" className="mx-auto max-w-6xl px-4 py-16">
+        <p
+          className="text-center text-xs font-semibold tracking-[0.35em] uppercase"
+          style={{ color: BRAND }}
+        >
+          Ubicación
+        </p>
+        <h2 className="mt-3 text-center text-3xl font-bold sm:text-4xl">
+          Visítanos en Pereira
+        </h2>
+        <p className="mx-auto mt-4 max-w-2xl text-center text-sm text-white/60 sm:text-base">
+          {ADDRESS}. Un espacio cómodo y pensado para tu momento de belleza.
+        </p>
+
+        <div className="mt-10 overflow-hidden rounded-2xl border border-white/10">
+          <iframe
+            title="Mapa de ubicación de Luzdy Jiménez — Cl 1 # 12-18, Pereira, Risaralda"
+            src={MAPS_EMBED_URL}
+            className="h-80 w-full border-0 sm:h-96"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+
+        <div className="mt-6 text-center">
+          <a
+            href={MAPS_DIRECTIONS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105"
+            style={{ backgroundColor: BRAND }}
+          >
+            <MapPin className="size-4" />
+            Cómo llegar
+          </a>
+        </div>
+      </section>
+
       {/* ===== Footer ===== */}
       <footer className="border-t border-white/10 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center">
@@ -337,8 +391,8 @@ export default async function LandingPage() {
 
 export const metadata = {
   title: {
-    absolute: "Luzdy Jiménez | Especialista en Cejas y Belleza",
+    absolute: 'Luzdy Jiménez | Especialista en Cejas y Belleza',
   },
   description:
-    "Depilación de cejas con hilo, manicure y pedicure, micropigmentación, lifting de pestañas y limpieza facial. Agenda tu cita.",
+    'Depilación de cejas con hilo, manicure y pedicure, micropigmentación, lifting de pestañas y limpieza facial. Agenda tu cita.',
 };
