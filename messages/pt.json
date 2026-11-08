@@ -2852,7 +2852,10 @@
       "cancelledAdminOnly": "Agendamentos cancelados só podem ser corrigidos por um administrador",
       "viewerNoStatus": "Os observadores não podem alterar o estado dos agendamentos",
       "viewerNoWrite": "Os observadores não podem criar nem editar agendamentos",
-      "agentTransition": "A transição de estado {from} → {to} não é permitida para agentes"
+      "agentTransition": "A transição de estado {from} → {to} não é permitida para agentes",
+      "agentPastCreate": "Como agente, você não pode registrar agendamentos em datas anteriores a hoje.",
+      "agentPastMove": "Como agente, você não pode mover um agendamento para uma data anterior a hoje.",
+      "agentStatusLocked": "Apenas o proprietário ou um administrador pode alterar o status de um agendamento registrado."
     }
   },
   "Services": {
@@ -3033,7 +3036,15 @@
         "noLlega": "NÃO COMPARECEU",
         "cancelada": "CANCELADO",
         "finalizada": "FINALIZADO"
-      }
+      },
+      "noPhoneWarning": "Este contato ainda não tem número de celular registrado. Adicione um para poder enviar lembretes e confirmações por WhatsApp.",
+      "phonePlaceholder": "Ex. 311 621 9282",
+      "savePhoneButton": "Salvar celular",
+      "phoneSavedToast": "Celular registrado para o contato",
+      "phoneSaveFailed": "Não foi possível salvar o celular — outro contato já pode tê-lo",
+      "phoneInvalid": "Inclua o código do país — o número deve começar com + (ex. +5215512345678)",
+      "pastDateForbidden": "Como agente, você não pode registrar agendamentos em datas anteriores a hoje.",
+      "statusAgentLocked": "Apenas o proprietário ou um administrador pode alterar o status de um agendamento registrado."
     },
     "visibilityOwner": "Como proprietário você vê a agenda de todos os membros e pode agendar para qualquer um deles.",
     "visibilityAdmin": "Como administrador você vê a agenda de todos os membros e pode agendar para qualquer um deles.",
@@ -3115,6 +3126,7 @@
     },
     "reminderTemplate": "Olá *{name}*! Lembramos o seu agendamento na {account}! Serviço de *{service}* para o dia {date}. Será um prazer atender você novamente!",
     "invitationTemplate": "Olá *{name}*! Sentimos sua falta na {account}! Seu último agendamento de *{service}* foi no dia {date}. Vamos marcar um novo? Diga a *data* e a *hora* para mimar você de novo.",
+    "invitationTemplateLongAgo": "Olá *{name}*! Sentimos sua falta na {account}! Seu último serviço foi *{service}*. Vamos marcar um novo? Diga a *data* e a *hora* para mimar você de novo.",
     "reminderSent": "Lembrete enviado",
     "invitationSent": "Convite enviado",
     "sendFailed": "Não foi possível enviar a mensagem de WhatsApp (verifique a conexão do WhatsApp e a janela de 24 horas)",

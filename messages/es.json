@@ -2852,7 +2852,10 @@
       "cancelledAdminOnly": "Las citas canceladas solo pueden ser corregidas por un administrador",
       "viewerNoStatus": "Los observadores no pueden cambiar el estado de las citas",
       "viewerNoWrite": "Los observadores no pueden crear ni editar citas",
-      "agentTransition": "La transición de estado {from} → {to} no está permitida para agentes"
+      "agentTransition": "La transición de estado {from} → {to} no está permitida para agentes",
+      "agentPastCreate": "Como agente no puedes registrar citas en fechas anteriores a hoy.",
+      "agentPastMove": "Como agente no puedes mover una cita a una fecha anterior a hoy.",
+      "agentStatusLocked": "Solo el propietario o un administrador puede cambiar el estado de una cita registrada."
     }
   },
   "Services": {
@@ -3033,7 +3036,15 @@
         "noLlega": "NO LLEGA",
         "cancelada": "CANCELADA",
         "finalizada": "FINALIZADA"
-      }
+      },
+      "noPhoneWarning": "Este contacto aún no tiene número de celular registrado. Agrégalo para poder enviarle recordatorios y confirmaciones por WhatsApp.",
+      "phonePlaceholder": "Ej. 311 621 9282",
+      "savePhoneButton": "Guardar celular",
+      "phoneSavedToast": "Celular registrado para el contacto",
+      "phoneSaveFailed": "No se pudo guardar el celular — puede que otro contacto ya lo tenga",
+      "phoneInvalid": "Incluye el código de país — el número debe empezar con + (p. ej. +5215512345678)",
+      "pastDateForbidden": "Como agente no puedes registrar citas en fechas anteriores a hoy.",
+      "statusAgentLocked": "Solo el propietario o un administrador puede cambiar el estado de una cita registrada."
     },
     "visibilityOwner": "Como propietario ves las agendas de todos los miembros y puedes registrar citas para cualquiera de ellos.",
     "visibilityAdmin": "Como administrador ves las agendas de todos los miembros y puedes registrar citas para cualquiera de ellos.",
@@ -3115,6 +3126,7 @@
     },
     "reminderTemplate": "Hola *{name}*! ¡Te recordamos tu cita en {account}! Servicio de *{service}* para el {date}. ¡Será un gusto volver a consentirte!",
     "invitationTemplate": "Hola *{name}*! ¡Te extrañamos en {account}! Tu última cita de *{service}* fue el {date}. ¿Agendamos una nueva cita? Dinos la *fecha* y la *hora* para volver a consentirte.",
+    "invitationTemplateLongAgo": "Hola *{name}*! ¡Te extrañamos en {account}! Tu último servicio fue *{service}*. ¿Agendamos una nueva cita? Dinos la *fecha* y la *hora* para volver a consentirte.",
     "reminderSent": "Recordatorio enviado",
     "invitationSent": "Invitación enviada",
     "sendFailed": "No se pudo enviar el mensaje de WhatsApp (verifica la conexión de WhatsApp y la ventana de 24 horas)",

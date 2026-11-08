@@ -329,6 +329,16 @@ export function HistoryView() {
         date: formatShortDate(row.next.starts_at, timezone),
       });
     }
+    // Cliente con más de 90 días sin visitar: la invitación menciona
+    // el último servicio pero no la fecha — citar "el 12 de marzo"
+    // cuando la visita fue hace meses se siente desactualizado.
+    if (row.days_since != null && row.days_since > 90) {
+      return t('invitationTemplateLongAgo', {
+        name: firstName,
+        account: accountName,
+        service: serviceName,
+      });
+    }
     return t('invitationTemplate', {
       name: firstName,
       account: accountName,

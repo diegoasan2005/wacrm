@@ -2852,7 +2852,10 @@
       "cancelledAdminOnly": "Cancelled appointments can only be corrected by an administrator",
       "viewerNoStatus": "Viewers cannot change appointment statuses",
       "viewerNoWrite": "Viewers cannot create or edit appointments",
-      "agentTransition": "Status transition {from} → {to} is not allowed for agents"
+      "agentTransition": "Status transition {from} → {to} is not allowed for agents",
+      "agentPastCreate": "As an agent you cannot book appointments on dates before today.",
+      "agentPastMove": "As an agent you cannot move an appointment to a date before today.",
+      "agentStatusLocked": "Only the owner or an administrator can change the status of a registered appointment."
     }
   },
   "Services": {
@@ -3033,7 +3036,15 @@
         "noLlega": "NO-SHOW",
         "cancelada": "CANCELLED",
         "finalizada": "COMPLETED"
-      }
+      },
+      "noPhoneWarning": "This contact has no cell phone number yet. Add one so you can send WhatsApp reminders and confirmations.",
+      "phonePlaceholder": "E.g. 311 621 9282",
+      "savePhoneButton": "Save phone",
+      "phoneSavedToast": "Phone number saved for this contact",
+      "phoneSaveFailed": "Could not save the phone — another contact may already have it",
+      "phoneInvalid": "Include the country code — the number must start with + (e.g. +5215512345678)",
+      "pastDateForbidden": "As an agent you cannot book appointments on dates before today.",
+      "statusAgentLocked": "Only the owner or an administrator can change the status of a registered appointment."
     },
     "visibilityOwner": "As owner you see every member's agenda and can book appointments for any of them.",
     "visibilityAdmin": "As admin you see every member's agenda and can book appointments for any of them.",
@@ -3115,6 +3126,7 @@
     },
     "reminderTemplate": "Hello *{name}*! We remind you of your appointment at {account}! *{service}* on {date}. It will be a pleasure to see you again!",
     "invitationTemplate": "Hello *{name}*! We miss you at {account}! Your last *{service}* appointment was on {date}. Shall we book a new appointment? Tell us the *date* and the *time* to treat you again.",
+    "invitationTemplateLongAgo": "Hello *{name}*! We miss you at {account}! Your last service was *{service}*. Shall we book a new appointment? Tell us the *date* and the *time* to treat you again.",
     "reminderSent": "Reminder sent",
     "invitationSent": "Invitation sent",
     "sendFailed": "Could not send the WhatsApp message (check the WhatsApp connection and the 24-hour window)",

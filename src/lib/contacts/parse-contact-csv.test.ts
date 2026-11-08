@@ -128,4 +128,14 @@ describe('parseContactCsv', () => {
       tagNames: [],
     });
   });
+
+  it('treats literal "NULL" cells (Excel exports) as missing data', () => {
+    const csv = `identificacion,nombre,apellido,celular
+34050948,ESPERANZA,HENAO,NULL`;
+
+    const { rows } = parseContactCsv(csv);
+    expect(rows[0].phone).toBe('');
+    expect(rows[0].name).toBe('ESPERANZA');
+    expect(rows[0].lastName).toBe('HENAO');
+  });
 });

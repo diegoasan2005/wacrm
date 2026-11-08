@@ -52,6 +52,45 @@ WhatsApp/Instagram.
   to page 1. Tags stay unsortable (bridge table, not a column). With
   a tag filter active the new RPC sort parameters take over; without
   it the plain query sorts client-requested.
+- **Register a missing cell phone right from the appointment dialog.**
+  When the appointment's existing contact has no phone on file, the
+  dialog shows a warning ("no cell number registered yet") with an
+  inline field to save one on the spot — same normalization as the
+  contact form (digits-only, auto +57 prefix, E.164 validation). The
+  contact is updated immediately and the warning clears.
+- **Come-back invitations skip stale dates.** When the customer has
+  been away for more than 90 days, the agenda-history WhatsApp
+  invitation mentions the last service but drops the last-visit date
+  (quoting "March 12th" for a months-old visit reads as outdated).
+  Within 90 days the invitation keeps the date as before.
+- **"NULL" text in imported contacts is treated as empty.** CSV
+  exports from other systems write the literal text NULL into empty
+  cells, and imported contacts ended up with phone = "NULL" — which
+  broke WhatsApp targeting and hid the appointment dialog's
+  missing-phone prompt. The importer now treats "NULL" cells (any
+  casing) as no data, and the appointment dialog ignores the sentinel
+  when deciding whether a contact has a phone.
+- **Agents can no longer backdate or re-status appointments.** Agent
+  accounts with booking permission can only create appointments from
+  today forward (in the account's timezone), can no longer change an
+  appointment's status at all, and cannot move an appointment into
+  the past — the edit dialog shows the status locked with a hint and
+  the date picker won't offer past days. Owner and admin keep the
+  full correction path (backdating and any status transition,
+  audit-trailed as before). Enforced in the database, not just the
+  UI: a crafted client hits the same walls.
+
+> **Migration required:** apply
+> `supabase/migrations/060_agent_time_restrictions.sql`
+> (replaces `create_appointment` with an agent past-date gate and
+> rewrites the `appointment_guard_transition` trigger: agents get no
+> status transitions and can't move appointments into the past).
+
+> **Migration required:** apply
+> `supabase/migrations/059_contact_null_phone_cleanup.sql`
+> (one-time cleanup: clears the "NULL" sentinel text from contacts'
+> phone/name/last_name/identification/email/company so existing
+> imported rows read as genuinely empty).
 
 > **Migration required:** apply
 > `supabase/migrations/058_contact_sort_options.sql`

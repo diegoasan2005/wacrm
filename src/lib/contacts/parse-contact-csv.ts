@@ -62,7 +62,13 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   name: ['name', 'nombre'],
   lastName: ['lastname', 'last_name', 'apellido'],
   phone: ['phone', 'celular'],
-  birthMonth: ['birth_month', 'birthmonth', 'cumpleanos_mes', 'cumpleanosmes', 'mes'],
+  birthMonth: [
+    'birth_month',
+    'birthmonth',
+    'cumpleanos_mes',
+    'cumpleanosmes',
+    'mes',
+  ],
   birthDay: ['birth_day', 'birthday', 'cumpleanos_dia', 'cumpleanosdia', 'dia'],
   email: ['email', 'correo'],
   company: ['company', 'empresa'],
@@ -112,9 +118,7 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
   if (lines.length < 2) return empty;
 
   const delimiter = detectDelimiter(lines[0]);
-  const headers = lines[0]
-    .split(delimiter)
-    .map(cleanHeader);
+  const headers = lines[0].split(delimiter).map(cleanHeader);
 
   const find = (logical: string) => {
     const aliases = COLUMN_ALIASES[logical];
@@ -143,8 +147,15 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
     if (!line) continue;
 
     const values = parseCsvLine(line, delimiter);
-    const cell = (idx: number) =>
-      idx >= 0 ? values[idx]?.replace(/["']/g, '').trim() || undefined : undefined;
+    const cell = (idx: number) => {
+      if (idx < 0) return undefined;
+      const value = values[idx]?.replace(/["']/g, '').trim();
+      // "NULL" textual — exports de Excel/otros sistemas convierten
+      // la celda vacía en el texto NULL; se trata como sin dato para
+      // que el contacto no quede con phone="NULL".
+      if (!value || /^null$/i.test(value)) return undefined;
+      return value;
+    };
 
     const birthMonthRaw = cell(birthMonthIdx);
     const birthDayRaw = cell(birthDayIdx);
@@ -159,11 +170,17 @@ export function parseContactCsv(text: string): ParseContactCsvResult {
       email: cell(emailIdx),
       company: cell(companyIdx),
       birthMonth:
-        birthMonth && Number.isInteger(birthMonth) && birthMonth >= 1 && birthMonth <= 12
+        birthMonth &&
+        Number.isInteger(birthMonth) &&
+        birthMonth >= 1 &&
+        birthMonth <= 12
           ? birthMonth
           : undefined,
       birthDay:
-        birthDay && Number.isInteger(birthDay) && birthDay >= 1 && birthDay <= 31
+        birthDay &&
+        Number.isInteger(birthDay) &&
+        birthDay >= 1 &&
+        birthDay <= 31
           ? birthDay
           : undefined,
       tagNames: tagsIdx >= 0 ? parseTagCell(cell(tagsIdx)) : [],

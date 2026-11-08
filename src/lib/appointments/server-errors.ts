@@ -9,9 +9,9 @@
 // a future migration adds a new one).
 // ============================================================
 
-import { getT } from "@/lib/i18n/translate";
+import { getT } from '@/lib/i18n/translate';
 
-const t = getT("Api.agenda");
+const t = getT('Api.agenda');
 
 type Rule = {
   re: RegExp;
@@ -21,50 +21,62 @@ type Rule = {
 };
 
 const RULES: Rule[] = [
-  { re: /That time slot is already taken/i, key: "slotTaken" },
-  { re: /outside the specialist working hours/i, key: "outsideWorkingHours" },
+  { re: /That time slot is already taken/i, key: 'slotTaken' },
+  { re: /outside the specialist working hours/i, key: 'outsideWorkingHours' },
   {
     re: /specialist is not available on that date/i,
-    key: "specialistUnavailableDate",
+    key: 'specialistUnavailableDate',
   },
   {
     re: /permission to register appointments/i,
-    key: "bookingPermissionRequired",
+    key: 'bookingPermissionRequired',
   },
-  { re: /permission to edit appointments/i, key: "editPermissionRequired" },
+  { re: /permission to edit appointments/i, key: 'editPermissionRequired' },
   {
     re: /Agents can only create appointments for themselves/i,
-    key: "agentSelfCreateOnly",
+    key: 'agentSelfCreateOnly',
   },
   {
     re: /Agents can only edit their own appointments/i,
-    key: "agentSelfEditOnly",
+    key: 'agentSelfEditOnly',
   },
   {
     re: /Only administrators can reassign/i,
-    key: "reassignAdminOnly",
+    key: 'reassignAdminOnly',
   },
-  { re: /service is not available for booking/i, key: "serviceUnavailable" },
-  { re: /specialist is not eligible/i, key: "specialistNotEligible" },
-  { re: /Contact not found in your account/i, key: "contactNotFound" },
-  { re: /Service not found in your account/i, key: "serviceNotFound" },
+  { re: /service is not available for booking/i, key: 'serviceUnavailable' },
+  { re: /specialist is not eligible/i, key: 'specialistNotEligible' },
+  { re: /Contact not found in your account/i, key: 'contactNotFound' },
+  { re: /Service not found in your account/i, key: 'serviceNotFound' },
   {
     re: /can only change the status of their own appointments/i,
-    key: "agentOwnStatusOnly",
+    key: 'agentOwnStatusOnly',
   },
   {
     re: /appointments can only be corrected by an administrator/i,
-    key: "cancelledAdminOnly",
+    key: 'cancelledAdminOnly',
   },
   {
     re: /Viewers cannot change appointment statuses/i,
-    key: "viewerNoStatus",
+    key: 'viewerNoStatus',
   },
-  { re: /Viewers cannot (create|edit) appointments/i, key: "viewerNoWrite" },
+  { re: /Viewers cannot (create|edit) appointments/i, key: 'viewerNoWrite' },
   {
     re: /Status transition (.+?) → (.+?) is not allowed for agents/,
-    key: "agentTransition",
+    key: 'agentTransition',
     withArgs: true,
+  },
+  {
+    re: /Agents cannot create appointments in the past/i,
+    key: 'agentPastCreate',
+  },
+  {
+    re: /Agents cannot move appointments into the past/i,
+    key: 'agentPastMove',
+  },
+  {
+    re: /Agents cannot change appointment statuses/i,
+    key: 'agentStatusLocked',
   },
 ];
 
